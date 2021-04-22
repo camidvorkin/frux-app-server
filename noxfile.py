@@ -45,10 +45,10 @@ def pyreverse(session):
     """Create class diagrams."""
     session.install("poetry")
 
-    # TODO: create smaller diagrams with portions of the project.
-    session.run("poetry", "run", "pyreverse", "frux_app_server", "-o", "png")
+    # # TODO: create smaller diagrams with portions of the project.
+    # session.run("poetry", "run", "pyreverse", "frux_app_server", "-o", "png")
 
-    session.run(
-        "mv", "packages.png", "docs/images/packages_dependencies.png", external=True
-    )
-    session.run("mv", "classes.png", "docs/images/project_classes.png", external=True)
+    # session.run(
+    #     "mv", "packages.png", "docs/images/packages_dependencies.png", external=True
+    # )
+    # session.run("mv", "classes.png", "docs/images/project_classes.png", external=True)
