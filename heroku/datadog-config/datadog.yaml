@@ -1,0 +1,13 @@
+# Documentacion completa de los parametros de configuracion del agente de Datadog:
+# https://github.com/DataDog/datadog-agent/blob/master/pkg/config/config_template.yaml
+
+listeners:
+  - name: docker
+config_providers:
+  - name: docker
+    polling: true
+    poll_interval: 1s
+process_config:
+    enabled: 'true'
+
+python_version: 3

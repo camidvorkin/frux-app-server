@@ -1,0 +1,10 @@
+
+build:
+  docker:
+    web: heroku-Dockerfile
+
+release:
+  image: web
+  command:
+    - poetry run python frux_app_server/manage.py db upgrade
+

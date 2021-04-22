@@ -1,0 +1,30 @@
+version: '3.7'
+services:
+    frux_app_server_postgres:
+        container_name: frux_app_server_postgres
+        image: postgres:11.9
+        environment:
+          - POSTGRES_USER=frux_app_server
+          - POSTGRES_PASSWORD=frux_app_server
+          - POSTGRES_DB=frux_app_server
+          - PGDATA=/var/lib/postgresql/data/pgdata
+        ports:
+          - 54321:5432
+        volumes:
+          - /var/lib/postgresql/data/pgdata
+        logging:
+            options:
+                max-size: 10m
+                max-file: "3"
+    frux_app_server_api:
+      container_name: frux_app_server_api
+      depends_on:
+        - frux_app_server_postgres
+      build:
+        context: ../
+        dockerfile: Dockerfile
+      ports:
+        - "5000:5000"
+      environment:
+        - DATABASE_URL=postgres://frux_app_server:frux_app_server@frux_app_server_postgres/frux_app_server
+      entrypoint: /app/docker-compose/api-entrypoint.sh

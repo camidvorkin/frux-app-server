@@ -1,0 +1,83 @@
+repos:
+-   repo: local
+    hooks:
+    - id: isort
+      name: isort
+      entry: poetry run isort
+      language: system
+      types: [python]
+      stages: [commit]
+      exclude: frux_app_server/migrations|docs
+    - id: black
+      name: black
+      entry: poetry run black
+      language: system
+      types: [python]
+      stages: [commit]
+      args: [--skip-string-normalization]
+      exclude: frux_app_server/migrations|docs
+    - id: flake8
+      name: flake8
+      entry: poetry run flake8
+      language: system
+      types: [python]
+      stages: [commit]
+      args: [--max-line-length=88]
+      exclude: frux_app_server/migrations|docs
+    - id: mypy
+      name: mypy
+      entry: poetry run mypy
+      language: system
+      types: [python]
+      stages: [commit]
+      exclude: frux_app_server/migrations|docs
+    - id: pylint
+      name: pylint
+      entry: poetry run pylint
+      language: system
+      types: [python]
+      stages: [commit]
+      args: [--load-plugins, pylint_flask_sqlalchemy]
+      exclude: frux_app_server/migrations|docs
+-   repo: git://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+    - id: trailing-whitespace
+    - id: requirements-txt-fixer
+-   repo: local
+    hooks:
+    - id: pytest
+      name: pytest
+      language: system
+      entry: poetry run nox --session tests
+      types: [python]
+      stages: [push]
+      pass_filenames: false
+    - id: linter
+      name: linter
+      language: system
+      entry: poetry run nox --session cop
+      types: [python]
+      stages: [push]
+      pass_filenames: false
+    - id: bandit
+      name: bandit
+      language: system
+      entry: poetry run nox --session bandit
+      types: [python]
+      stages: [push]
+      pass_filenames: false
+    - id: pyreverse
+      name: pyreverse
+      language: system
+      entry: poetry run nox --session pyreverse
+      types: [python]
+      stages: [push]
+      pass_filenames: false
+    - id: cov-badge
+      name: cov-badge
+      language: system
+      entry: poetry run coverage-badge -o coverage-badge -f
+      types: [python]
+      stages: [push]
+      pass_filenames: false
