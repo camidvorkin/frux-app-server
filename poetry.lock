@@ -60,11 +60,11 @@ python-versions = "*"
 
 [[package]]
 name = "astroid"
-version = "2.5.3"
+version = "2.5.4"
 description = "An abstract syntax tree for Python with inference support."
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = "~=3.6"
 
 [package.dependencies]
 lazy-object-proxy = ">=1.4.0"
@@ -1092,7 +1092,7 @@ testing = ["pytest", "pytest-cov", "pytest-xdist"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "2efeea33c4f64e4608669038f455535ed369bf496e63d9989a6476ef6328bb65"
+content-hash = "7e4454ebf877401d6d309a514a38eeb8bf32d3556637d3c987a8d5033c9606c9"
 
 [metadata.files]
 alembic = [
@@ -1120,8 +1120,8 @@ argparse = [
     {file = "argparse-1.4.0.tar.gz", hash = "sha256:62b089a55be1d8949cd2bc7e0df0bddb9e028faefc8c32038cc84862aefdd6e4"},
 ]
 astroid = [
-    {file = "astroid-2.5.3-py3-none-any.whl", hash = "sha256:bea3f32799fbb8581f58431c12591bc20ce11cbc90ad82e2ea5717d94f2080d5"},
-    {file = "astroid-2.5.3.tar.gz", hash = "sha256:ad63b8552c70939568966811a088ef0bc880f99a24a00834abd0e3681b514f91"},
+    {file = "astroid-2.5.4-py3-none-any.whl", hash = "sha256:f040fe9c4a2a7699a8ec30c9ed10fb59067c97f64c36577f476c0953ba29847c"},
+    {file = "astroid-2.5.4.tar.gz", hash = "sha256:f9f472d4002d55199b1c151ef0570cf71d42aaa34aaa3d29c3e41c75f6f47564"},
 ]
 atomicwrites = [
     {file = "atomicwrites-1.4.0-py2.py3-none-any.whl", hash = "sha256:6d1784dea7c0c8d4a5172b6c620f40b6e4cbfdf96d783691f2e1302a7b88e197"},
