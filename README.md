@@ -70,7 +70,7 @@ poetry run nox --sessions pyreverse
 
 ## Adding new migrations
 ```bash
-poetry run python frux-app-server/manage.py db migrate -m "migration message"
+poetry run python frux_app_server/manage.py db migrate -m "migration message"
 ```
 
 Remember to review them after creating them.
