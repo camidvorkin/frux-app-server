@@ -19,8 +19,3 @@ class Project(db.Model):  # type:ignore
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     owner = db.relationship(User, backref='creator')
-
-
-# class TodoSimple(db.Model):  # type:ignore
-#     id = db.Column(db.Integer, primary_key=True)
-#     reminder = db.Column(db.String)
