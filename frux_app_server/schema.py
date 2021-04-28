@@ -7,6 +7,7 @@ from frux_app_server.models import db
 
 # pylint: disable=unused-argument
 
+
 class User(SQLAlchemyObjectType):
     class Meta:
         description = 'Registered users'
