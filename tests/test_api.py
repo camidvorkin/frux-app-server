@@ -84,6 +84,32 @@ def test_create_a_user(client):
     read_graph_ql(client, query, response)
 
 
+def test_create_a_projecy(client):
+    query = {
+        'query': '''mutation {
+                mutateProject(description: "Plant a tree", userId: 2, name: "Enviroment Proyect", goal: 50000){
+                    project {
+                    name,
+                    description,
+                    goal
+                    }
+                }
+            }'''
+    }
+    response = {
+        "data": {
+            "mutateProject": {
+                "project": {
+                    "name": "Enviroment Proyect",
+                    "description": "Plant a tree",
+                    "goal": 50000,
+                }
+            }
+        }
+    }
+    read_graph_ql(client, query, response)
+
+
 # def test_delete_a_user(client):
 
 # def test_root(client):

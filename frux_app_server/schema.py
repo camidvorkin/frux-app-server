@@ -1,11 +1,21 @@
+import re
+
 import graphene
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
+from graphql import GraphQLError
 
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
 # pylint: disable=unused-argument
+
+
+def is_valid_email(email):
+    return re.match(
+        r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+        email,
+    )
 
 
 class User(SQLAlchemyObjectType):
@@ -43,11 +53,16 @@ class UserMutation(graphene.Mutation):
     user = graphene.Field(lambda: User)
 
     def mutate(self, info, name, email):
+
+        if not is_valid_email(email):
+            raise GraphQLError('Invalid email address!')
+
         user = UserModel(name=name, email=email)
 
         db.session.add(user)
         db.session.commit()
 
+        # 200 OK
         return UserMutation(user=user)
 
 
