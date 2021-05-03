@@ -1,2 +1,4 @@
 [run]
-omit = tests/*
+omit = features/*
+source = frux_app_server
+command_line = -m behive
