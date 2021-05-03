@@ -1,8 +1,10 @@
 import re
 
 import graphene
+import sqlalchemy
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from graphql import GraphQLError
+from promise import Promise
 
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import User as UserModel
@@ -55,14 +57,16 @@ class UserMutation(graphene.Mutation):
     def mutate(self, info, name, email):
 
         if not is_valid_email(email):
-            raise GraphQLError('Invalid email address!')
+            return Promise.reject(GraphQLError('Invalid email address!'))
 
         user = UserModel(name=name, email=email)
 
         db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            return Promise.reject(GraphQLError('Email address already registered!'))
 
-        # 200 OK
         return UserMutation(user=user)
 
 

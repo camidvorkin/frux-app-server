@@ -31,7 +31,7 @@ def read_graph_ql(client, query, exp_response):
     assert json.loads(response.data.decode()) == exp_response
 
 
-def test_get_all_users_empty_db(client):
+def test_query_all_users_empty_db(client):
     query = {
         'query': '''
             {
@@ -48,7 +48,7 @@ def test_get_all_users_empty_db(client):
     read_graph_ql(client, query, response)
 
 
-def test_show_all_projects_empty_db(client):
+def test_query_all_projects_empty_db(client):
     query = {
         'query': '''
             {
@@ -65,7 +65,7 @@ def test_show_all_projects_empty_db(client):
     read_graph_ql(client, query, response)
 
 
-def test_create_a_user(client):
+def test_mutation_user_valid(client):
     query = {
         'query': '''mutation {
             mutateUser(email: "pepe@gmail.com", name: "Pepe Suarez") {
@@ -84,7 +84,60 @@ def test_create_a_user(client):
     read_graph_ql(client, query, response)
 
 
-def test_create_a_projecy(client):
+def test_mutation_user_rejects_invalid_email(client):
+    query = {
+        'query': '''mutation {
+            mutateUser(email: "pepe", name: "Pepe Suarez") {
+                user {
+                name,
+                email,
+                }
+            }
+        } '''
+    }
+
+    response = client.post('/graphql', json=query)
+    assert response.status_code == 200
+    assert (
+        json.loads(response.data.decode())['errors'][0]['message']
+        == "Invalid email address!"
+    )
+
+
+def test_mutation_user_rejects_duplicate_email(client):
+    query = {
+        'query': '''mutation {
+            mutateUser(email: "pepe@gmail.com", name: "Pepe Suarez") {
+                user {
+                name,
+                email,
+                }
+            }
+        } '''
+    }
+    response = {
+        "errors": [
+            {
+                "message": "Email address already registered!",
+                "locations": [{"line": 2, "column": 3}],
+                "path": ["mutateUser"],
+            }
+        ],
+        "data": {"mutateUser": None},
+    }
+
+    response = client.post('/graphql', json=query)
+    response = client.post('/graphql', json=query)
+    assert response.status_code == 200
+    assert (
+        json.loads(response.data.decode())['errors'][0]['message']
+        == "Email address already registered!"
+    )
+
+    # read_graph_ql(client, query, response)
+
+
+def test_mutation_project_valid(client):
     query = {
         'query': '''mutation {
                 mutateProject(description: "Plant a tree", userId: 2, name: "Enviroment Proyect", goal: 50000){
@@ -111,17 +164,3 @@ def test_create_a_projecy(client):
 
 
 # def test_delete_a_user(client):
-
-# def test_root(client):
-#     response = client.get("/")
-#     assert response._status_code == 200
-
-# def test_hello(client):
-#     response = client.get("/v1/hello")
-#     assert response._status_code == 200
-#     assert json.loads(response.data).get("Say") == "Hello"
-
-# def test_echo(client):
-#     response = client.post("/v1/hello", json={"message": "Say hi"})
-#     assert response._status_code == 200
-#     assert json.loads(response.data).get("Echo") == "Say hi"
