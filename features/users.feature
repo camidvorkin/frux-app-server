@@ -1,22 +1,22 @@
 Feature: users
 
-  Scenario: usuario se registra
-     Given usuario no esta registrado
-      When usuario se registra con nombre "Pepe Suarez" y mail "pepe@fi.uba.ar"
-      Then usuario registrado con nombre "Pepe Suarez" y mail "pepe@fi.uba.ar"
+  Scenario: a new user is registered
+     Given user is not registered
+      When user registers with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      Then user already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
 
-  Scenario: usuario se registra con un mail repetido
-     Given usuario ya se encuentra registrado con nombre "Pepe Suarez" y mail "pepe@fi.uba.ar"
-      When usuario se registra con nombre "Pepe Suarez" y mail "pepe@fi.uba.ar"
-      Then se rechaza la operacion con el mensaje "Email address already registered!"
+  Scenario: user registers with an already used email
+     Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      When user registers with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      Then operation is rejected with the message "Email address already registered!"
 
-  Scenario: usuario se registra con un mail invalido
-     Given usuario no esta registrado
-      When usuario se registra con nombre "Pepe Suarez" y mail "pepe"
-      Then se rechaza la operacion con el mensaje "Invalid email address!"
+  Scenario: register with an invalid email
+     Given user is not registered
+      When user registers with name "Pepe Suarez" and mail "pepe"
+      Then operation is rejected with the message "Invalid email address!"
 
   Scenario: listado de usuarios
-     Given usuario ya se encuentra registrado con nombre "Pepe Suarez" y mail "pepe@fi.uba.ar"
-       And usuario ya se encuentra registrado con nombre "Andrea Suarez" y mail "andrea@fi.uba.ar"
-      When se listan todos los usuarios
-      Then se obtienen 2 usuarios
+     Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+       And user is already registered with name "Andrea Suarez" and mail "andrea@fi.uba.ar"
+      When users are listed
+      Then get a list of 2 users
