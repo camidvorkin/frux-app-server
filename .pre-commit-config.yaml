@@ -46,8 +46,8 @@ repos:
     - id: requirements-txt-fixer
 -   repo: local
     hooks:
-    - id: pytest
-      name: pytest
+    - id: behave
+      name: behave
       language: system
       entry: poetry run nox --session tests
       types: [python]

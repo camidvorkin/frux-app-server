@@ -2,6 +2,7 @@
 
 per-file-ignores =
     tests/*.py:D103, D100
+    features/*.py:D103, D100, F403, F405, F811
 
 ignore =
     E203, # Whitespace before ':'
