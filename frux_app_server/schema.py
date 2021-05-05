@@ -6,6 +6,7 @@ from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from graphql import GraphQLError
 from promise import Promise
 
+from frux_app_server.constants import Category, Stage, categories, stages
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
@@ -76,14 +77,40 @@ class ProjectMutation(graphene.Mutation):
         description = graphene.String(required=True)
         goal = graphene.Int(required=True)
         user_id = graphene.Int(required=True)
+        category = graphene.String()
+        stage = graphene.String()
 
     project = graphene.Field(lambda: Project)
 
-    def mutate(self, info, user_id, name, description, goal):
+    def mutate(
+        self,
+        info,
+        user_id,
+        name,
+        description,
+        goal,
+        category=(Category.OTHERS.value),
+        stage=(Stage.IN_PROGRESS.value),
+    ):
+
+        if category not in categories:
+            return Promise.reject(
+                GraphQLError('Invalid Category! Try with:' + ",".join(categories))
+            )
+        if stage not in stages:
+            return Promise.reject(
+                GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
+            )
+
         user = UserModel.query.get(user_id)
 
         project = ProjectModel(
-            name=name, description=description, goal=goal, owner=user
+            name=name,
+            description=description,
+            goal=goal,
+            owner=user,
+            category=category,
+            stage=stage,
         )
 
         db.session.add(project)

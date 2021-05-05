@@ -1,6 +1,8 @@
 """SQLAlchemy models."""
 from flask_sqlalchemy import SQLAlchemy
 
+from frux_app_server.constants import Category, Stage
+
 db = SQLAlchemy()
 
 
@@ -20,3 +22,5 @@ class Project(db.Model):  # type:ignore
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     owner = db.relationship(User, backref='creator')
+    category = db.Column(db.Enum(Category))
+    stage = db.Column(db.Enum(Stage))

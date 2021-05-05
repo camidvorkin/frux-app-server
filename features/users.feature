@@ -15,7 +15,7 @@ Feature: users
       When user registers with name "Pepe Suarez" and mail "pepe"
       Then operation is rejected with the message "Invalid email address!"
 
-  Scenario: listado de usuarios
+  Scenario: list users
      Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
        And user is already registered with name "Andrea Suarez" and mail "andrea@fi.uba.ar"
       When users are listed

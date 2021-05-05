@@ -30,8 +30,10 @@ def upgrade():
     sa.Column('description', sa.String(), nullable=True),
     sa.Column('goal', sa.Float(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('category', sa.String(), nullable=True),
+    sa.Column('stage', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
     )
     op.drop_table('todo_simple')
     # ### end Alembic commands ###
