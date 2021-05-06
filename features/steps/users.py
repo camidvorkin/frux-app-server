@@ -50,12 +50,6 @@ def step_impl(context, name, email):
     assert res == {"data": {"mutateUser": {"user": {"name": name, "email": email}}}}
 
 
-@then('operation is rejected with the message "{message}"')
-def step_impl(context, message):
-    res = json.loads(context.response.data.decode())
-    assert res['errors'][0]['message'] == message
-
-
 @when('users are listed')
 def step_impl(context):
     context.response = context.client.post('/graphql', json={'query': QUERY_ALL_USERS})
