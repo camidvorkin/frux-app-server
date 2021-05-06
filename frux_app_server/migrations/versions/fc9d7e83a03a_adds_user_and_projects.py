@@ -32,8 +32,16 @@ def upgrade():
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('category', sa.String(), nullable=True),
     sa.Column('stage', sa.String(), nullable=True),
+    sa.Column('latitude', sa.String(), nullable=True),
+    sa.Column('longitude', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
+    )
+    op.create_table('hashtag',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('hashtag', sa.String(), nullable=True),
+    sa.Column('id_project', sa.String(), sa.ForeignKey('project.id'), nullable=True),
+    sa.PrimaryKeyConstraint('id')
     )
     op.drop_table('todo_simple')
     # ### end Alembic commands ###

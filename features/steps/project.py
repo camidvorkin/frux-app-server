@@ -17,8 +17,8 @@ QUERY_ALL_PROJECT = '''
 '''
 
 MUTATION_NEW_PROJECT = '''
-    mutation NewProject($description: String!, $userId: Int!, $name: String!, $goal: Int!, $category: String, $stage: String) {
-        mutateProject(userId: $userId, name: $name, description: $description, goal: $goal, category: $category, stage: $stage) {
+    mutation NewProject($description: String!, $userId: Int!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
+        mutateProject(userId: $userId, name: $name, description: $description, goal: $goal, category: $category, stage: $stage, hashtags: $hashtags) {
             project {
                 name,
                 description,
@@ -63,6 +63,12 @@ def step_impl(context, category):
 @when('the stage is "{stage}"')
 def step_impl(context, stage):
     variables['stage'] = stage
+
+
+@when('hashtags "{hashtags}"')
+def step_impl(context, hashtags):
+    h = hashtags.split(",")
+    variables['hashtags'] = h
 
 
 @given('the total amount to be collected is {goal}')

@@ -14,6 +14,13 @@ class User(db.Model):  # type:ignore
     email = db.Column(db.String)
 
 
+class Hashtag(db.Model):  # type:ignore
+    __tablename__ = 'hashtag'
+    id = db.Column(db.Integer, primary_key=True)
+    hashtag = db.Column(db.String)
+    id_project = db.Column(db.Integer, db.ForeignKey('project.id'))
+
+
 class Project(db.Model):  # type:ignore
     __tablename__ = 'project'
     id = db.Column(db.Integer, primary_key=True)
@@ -24,3 +31,5 @@ class Project(db.Model):  # type:ignore
     owner = db.relationship(User, backref='creator')
     category = db.Column(db.Enum(Category))
     stage = db.Column(db.Enum(Stage))
+    latitude = db.Column(db.String)
+    longitude = db.Column(db.String)

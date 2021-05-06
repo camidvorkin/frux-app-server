@@ -6,6 +6,7 @@ Feature: projects
       And is about "Plant a tree"
       And the category is "ART"
       And the stage is "COMPLETE"
+      And hashtags "#planet,#green"
       And the total amount to be collected is 5000
       Then the project "Environment Project", description "Plant a tree", category "ART", stage "COMPLETE" and goal 5000 is created correctly
 
@@ -14,6 +15,7 @@ Feature: projects
       When user 2 create a project "Tech Project"
       And is about "Computer engineering"
       And the stage is "IN_PROGRESS"
+      And hashtags "#python"
       And the total amount to be collected is 5000
       Then the project "Tech Project", description "Computer engineering", category "OTHERS", stage "IN_PROGRESS" and goal 5000 is created correctly
 
@@ -22,6 +24,7 @@ Feature: projects
       When user 3 create a project "Music Project"
       And is about "Create a short clip"
       And the category is "MUSIC"
+      And hashtags "#guitar,#rock,#music"
       And the total amount to be collected is 2000
       Then the project "Music Project", description "Create a short clip", category "MUSIC", stage "IN_PROGRESS" and goal 2000 is created correctly
 
