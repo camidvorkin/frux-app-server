@@ -6,9 +6,10 @@ from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from graphql import GraphQLError
 from promise import Promise
 
-from frux_app_server.constants import Category, Stage, categories, stages
+from frux_app_server.constants import Category, State, categories, states
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Project as ProjectModel
+from frux_app_server.models import ProjectState as ProjectStateModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
@@ -26,6 +27,13 @@ class User(SQLAlchemyObjectType):
     class Meta:
         description = 'Registered users'
         model = UserModel
+        interfaces = (graphene.relay.Node,)
+
+
+class ProjectState(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Registered projects'
+        model = ProjectStateModel
         interfaces = (graphene.relay.Node,)
 
 
@@ -55,6 +63,7 @@ class Query(graphene.ObjectType):
     all_users = SQLAlchemyConnectionField(User)
     all_projects = SQLAlchemyConnectionField(Project)
     all_hashtags = SQLAlchemyConnectionField(Hashtag)
+    all_project_states = SQLAlchemyConnectionField(ProjectState)
 
 
 class UserMutation(graphene.Mutation):
@@ -88,7 +97,9 @@ class ProjectMutation(graphene.Mutation):
         user_id = graphene.Int(required=True)
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
-        stage = graphene.String()
+        state = graphene.String()
+        state_goal = graphene.Int()
+        state_description = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
 
@@ -103,7 +114,9 @@ class ProjectMutation(graphene.Mutation):
         goal,
         hashtags,
         category=(Category.OTHERS.value),
-        stage=(Stage.IN_PROGRESS.value),
+        state=(State.IN_PROGRESS.value),
+        state_goal=0,
+        state_description="",
         latitude="0.0",
         longitude="0.0",
     ):
@@ -112,20 +125,25 @@ class ProjectMutation(graphene.Mutation):
             return Promise.reject(
                 GraphQLError('Invalid Category! Try with:' + ",".join(categories))
             )
-        if stage not in stages:
+        if state not in states:
             return Promise.reject(
-                GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
+                GraphQLError('Invalid State! Try with:' + ",".join(states))
             )
 
         user = UserModel.query.get(user_id)
+
+        project_state = ProjectStateModel(
+            state=state, goal=state_goal, description=state_description
+        )
+        db.session.add(project_state)
 
         project = ProjectModel(
             name=name,
             description=description,
             goal=goal,
             owner=user,
+            state=project_state,
             category=category,
-            stage=stage,
             latitude=latitude,
             longitude=longitude,
         )

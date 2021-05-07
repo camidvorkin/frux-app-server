@@ -9,11 +9,11 @@ class Category(enum.Enum):
     OTHERS = 'OTHERS'
 
 
-class Stage(enum.Enum):
+class State(enum.Enum):
     IN_PROGRESS = 'IN_PROGRESS'
     ALMOST_DONE = 'ALMOST_DONE'
     COMPLETE = 'COMPLETE'
 
 
 categories = [category.value for category in Category]
-stages = [stage.value for stage in Stage]
+states = [state.value for state in State]
