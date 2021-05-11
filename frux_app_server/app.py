@@ -2,6 +2,7 @@
 import logging
 from pathlib import Path
 
+import firebase_admin
 from flask import Flask
 from flask_cors import CORS
 from flask_graphql import GraphQLView
@@ -13,6 +14,7 @@ from frux_app_server.cfg import config
 from frux_app_server.models import db
 
 from .schema import schema
+from .templates import GRAPHIQL_TEMPLATE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -27,6 +29,8 @@ def fix_dialect(s):
 
 def create_app(test_db=None):
     """creates a new app instance"""
+    firebase_admin.initialize_app()
+
     new_app = Flask(__name__)
     new_app.config["SQLALCHEMY_DATABASE_URI"] = config.database.url(
         default=test_db or "sqlite:///frux_app_server.db", cast=fix_dialect
@@ -39,7 +43,11 @@ def create_app(test_db=None):
     new_app.add_url_rule(
         '/graphql',
         view_func=GraphQLView.as_view(
-            'graphql', schema=schema, graphiql=True  # for having the GraphiQL interface
+            'graphql',
+            schema=schema,
+            graphiql=True,  # for having the GraphiQL interface
+            graphiql_version="1.0.5",
+            graphiql_template=GRAPHIQL_TEMPLATE,
         ),
     )
 

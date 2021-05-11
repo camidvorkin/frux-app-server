@@ -27,6 +27,7 @@ Flask-GraphQL = "^2.0.1"
 snapshottest = "^0.6.0"
 pylint = "^2.8.2"
 behave = "^1.2.6"
+firebase-admin = "^5.0.0"
 
 [tool.poetry.dev-dependencies]
 nox = "^2020.8.22"

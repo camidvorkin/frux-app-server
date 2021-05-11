@@ -2,6 +2,7 @@ import re
 
 import graphene
 import sqlalchemy
+from firebase_admin import auth
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 from graphql import GraphQLError
 from promise import Promise
@@ -34,14 +35,58 @@ class Project(SQLAlchemyObjectType):
         interfaces = (graphene.relay.Node,)
 
 
+def requires_auth(func):
+    '''
+    Authorization decorator for graphql queries/objects.
+    Users are authenticated with a Bearer Token given by the firebase app.
+    Once authenticated, finds the current user in the database and if
+    it doesn't exists it creates it.
+    Assigns the current user db object to `info.context.user`.
+    '''
+
+    def wrapper(obj, info, **kwargs):
+        if 'Authorization' not in info.context.headers:
+            raise GraphQLError('Missing Bearer token')
+        try:
+            userinfo = auth.verify_id_token(
+                info.context.headers['Authorization'].split()[-1]
+            )
+        except auth.ExpiredIdTokenError as e:
+            raise GraphQLError('Expired token error') from e
+        except auth.InvalidIdTokenError as e:
+            raise GraphQLError('Invalid Bearer token') from e
+        except auth.TokenSignError as e:
+            raise GraphQLError('Token sign error') from e
+
+        try:
+            info.context.user = (
+                db.session.query(UserModel).filter_by(email=userinfo['email']).one()
+            )
+        except sqlalchemy.orm.exc.NoResultFound:
+            info.context.user = UserModel(email=userinfo['email'])
+            db.session.add(info.context.user)
+            db.session.commit()
+        return func(obj, info, **kwargs)
+
+    return wrapper
+
+
+class CustomSQLAlchemyConnectionField(SQLAlchemyConnectionField):
+    @classmethod
+    def get_query(cls, model, info, sort=None, **args):
+        return requires_auth(super(CustomSQLAlchemyConnectionField, cls).get_query)(
+            model, info, sort=sort, **args
+        )
+
+
 class Query(graphene.ObjectType):
     node = graphene.relay.Node.Field()
 
-    def resolve_users(self, info, name=None):
-        query = User.get_query(info)
-        if name:
-            query = query.filter(UserModel.name == name)
-        return query.all()
+    profile = graphene.Field(User)
+
+    @requires_auth
+    def resolve_profile(self, info):
+        return info.context.user
 
     all_users = SQLAlchemyConnectionField(User)
     all_projects = SQLAlchemyConnectionField(Project)
