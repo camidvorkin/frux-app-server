@@ -72,7 +72,9 @@ def create_app(test_db=None):
         firebase_admin.initialize_app(
             firebase_admin.credentials.Certificate(
                 {
-                    "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', ''),
+                    "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', '').replace(
+                        '\\n', '\n'
+                    ),
                     "project_id": os.environ.get('FIREBASE_PROJECT_ID', ''),
                     "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL', ''),
                     "type": "service_account",
