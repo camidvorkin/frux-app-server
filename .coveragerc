@@ -1,4 +1,6 @@
 [run]
-omit = features/*
+omit =
+    features/*
+    migrations/*
 source = frux_app_server
 command_line = -m behive
