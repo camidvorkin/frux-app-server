@@ -1,7 +1,10 @@
 """Flask api."""
 import logging
+import os
 from pathlib import Path
 
+import firebase_admin
+from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
 from flask_graphql import GraphQLView
@@ -13,9 +16,24 @@ from frux_app_server.cfg import config
 from frux_app_server.models import db
 
 from .schema import schema
+from .templates import GRAPHIQL_TEMPLATE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+load_dotenv()
+
+firebase_admin.initialize_app(
+    firebase_admin.credentials.Certificate(
+        {
+            "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', ''),
+            "project_id": os.environ.get('FIREBASE_PROJECT_ID', ''),
+            "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL', ''),
+            "type": "service_account",
+            "token_uri": "https://oauth2.googleapis.com/token",
+        }
+    )
+)
 
 
 def fix_dialect(s):
@@ -27,6 +45,7 @@ def fix_dialect(s):
 
 def create_app(test_db=None):
     """creates a new app instance"""
+
     new_app = Flask(__name__)
     new_app.config["SQLALCHEMY_DATABASE_URI"] = config.database.url(
         default=test_db or "sqlite:///frux_app_server.db", cast=fix_dialect
@@ -39,7 +58,11 @@ def create_app(test_db=None):
     new_app.add_url_rule(
         '/graphql',
         view_func=GraphQLView.as_view(
-            'graphql', schema=schema, graphiql=True  # for having the GraphiQL interface
+            'graphql',
+            schema=schema,
+            graphiql=True,  # for having the GraphiQL interface
+            graphiql_version="1.0.5",
+            graphiql_template=GRAPHIQL_TEMPLATE,
         ),
     )
 
