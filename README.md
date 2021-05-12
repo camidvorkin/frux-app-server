@@ -104,7 +104,14 @@ docker-compose up --build
 ```
 
 # Running locally
-First make sure you have the db up to date, and then run locally.
+Create an `.env` file with the following Firebase admin account credentials:
+```
+FIREBASE_PRIVATE_KEY="..."
+FIREBASE_CLIENT_EMAIL="..."
+FIREBASE_PROJECT_ID="..."
+```
+
+Make sure you have the db up to date, and then run locally.
 
 ```bash
 poetry run python frux_app_server/manage.py db upgrade
