@@ -2,6 +2,8 @@ import json
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
+from frux_app_server.models import User
+
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
 QUERY_ALL_USERS = '''
@@ -12,6 +14,15 @@ QUERY_ALL_USERS = '''
                     id
                 }
             }
+        }
+    }
+'''
+
+QUERY_PROFILE = '''
+    {
+        profile {
+            id,
+            email
         }
     }
 '''
@@ -33,7 +44,6 @@ def step_impl(context):
     pass
 
 
-@given('user is already registered with name "{name}" and mail "{email}"')
 @when('user registers with name "{name}" and mail "{email}"')
 def step_impl(context, name, email):
     variables = {'email': email, 'name': name}
@@ -60,3 +70,11 @@ def step_impl(context, n):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert len(res['data']['allUsers']['edges']) == int(n)
+
+
+@given('user is already registered with name "{name}" and mail "{email}"')
+def step_impl(context, name, email):
+    user = User(name=name, email=email)
+    with context.app.app_context():
+        context.db.session.add(user)
+        context.db.session.commit()

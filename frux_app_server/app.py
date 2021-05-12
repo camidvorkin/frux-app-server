@@ -23,18 +23,6 @@ logger.setLevel(logging.INFO)
 
 load_dotenv()
 
-firebase_admin.initialize_app(
-    firebase_admin.credentials.Certificate(
-        {
-            "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', ''),
-            "project_id": os.environ.get('FIREBASE_PROJECT_ID', ''),
-            "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL', ''),
-            "type": "service_account",
-            "token_uri": "https://oauth2.googleapis.com/token",
-        }
-    )
-)
-
 
 def fix_dialect(s):
     if s.startswith("postgres://"):
@@ -47,11 +35,12 @@ def create_app(test_db=None):
     """creates a new app instance"""
 
     new_app = Flask(__name__)
-    new_app.config["SQLALCHEMY_DATABASE_URI"] = config.database.url(
-        default=test_db or "sqlite:///frux_app_server.db", cast=fix_dialect
+    new_app.config["SQLALCHEMY_DATABASE_URI"] = test_db or config.database.url(
+        "sqlite:///frux_app_server.db", cast=fix_dialect
     )
     new_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     new_app.config["ERROR_404_HELP"] = False
+
     db.init_app(new_app)
     api.init_app(new_app)
 
@@ -77,4 +66,18 @@ def create_app(test_db=None):
     )  # remove after flask-restx > 0.2.0 is released
     # https://github.com/python-restx/flask-restx/issues/230
     CORS(new_app)
+
+    # pylint: disable= protected-access
+    if not firebase_admin._apps and 'FIREBASE_PRIVATE_KEY' in os.environ:
+        firebase_admin.initialize_app(
+            firebase_admin.credentials.Certificate(
+                {
+                    "private_key": os.environ.get('FIREBASE_PRIVATE_KEY', ''),
+                    "project_id": os.environ.get('FIREBASE_PROJECT_ID', ''),
+                    "client_email": os.environ.get('FIREBASE_CLIENT_EMAIL', ''),
+                    "type": "service_account",
+                    "token_uri": "https://oauth2.googleapis.com/token",
+                }
+            )
+        )
     return new_app

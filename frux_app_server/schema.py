@@ -33,7 +33,7 @@ class User(SQLAlchemyObjectType):
 
 class ProjectState(SQLAlchemyObjectType):
     class Meta:
-        description = 'Registered projects'
+        description = 'Registered projects progress states'
         model = ProjectStateModel
         interfaces = (graphene.relay.Node,)
 
@@ -47,7 +47,7 @@ class Project(SQLAlchemyObjectType):
 
 class Hashtag(SQLAlchemyObjectType):
     class Meta:
-        description = 'Registered projects'
+        description = 'Registered hashtags for projects'
         model = HashtagModel
         interfaces = (graphene.relay.Node,)
 
@@ -139,7 +139,6 @@ class ProjectMutation(graphene.Mutation):
         name = graphene.String(required=True)
         description = graphene.String(required=True)
         goal = graphene.Int(required=True)
-        user_id = graphene.Int(required=True)
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
         state = graphene.String()
@@ -150,14 +149,14 @@ class ProjectMutation(graphene.Mutation):
 
     project = graphene.Field(lambda: Project)
 
+    @requires_auth
     def mutate(
         self,
         info,
-        user_id,
         name,
         description,
         goal,
-        hashtags,
+        hashtags=None,
         category=(Category.OTHERS.value),
         state=(State.IN_PROGRESS.value),
         state_goal=0,
@@ -165,6 +164,8 @@ class ProjectMutation(graphene.Mutation):
         latitude="0.0",
         longitude="0.0",
     ):
+        if not hashtags:
+            hashtags = []
 
         if category not in categories:
             return Promise.reject(
@@ -175,8 +176,6 @@ class ProjectMutation(graphene.Mutation):
                 GraphQLError('Invalid State! Try with:' + ",".join(states))
             )
 
-        user = UserModel.query.get(user_id)
-
         project_state = ProjectStateModel(
             state=state, goal=state_goal, description=state_description
         )
@@ -186,7 +185,7 @@ class ProjectMutation(graphene.Mutation):
             name=name,
             description=description,
             goal=goal,
-            owner=user,
+            owner=info.context.user,
             state=project_state,
             category=category,
             latitude=latitude,

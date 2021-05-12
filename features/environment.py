@@ -17,6 +17,7 @@ def app_client(context, *args, **kwargs):
         with app.test_client() as test_client:
             context.client = test_client
             context.db = db
+            context.app = app
             yield context.client
         with app.app_context():
             db.drop_all()
