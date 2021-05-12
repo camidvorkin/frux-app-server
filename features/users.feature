@@ -1,0 +1,22 @@
+Feature: users
+
+  Scenario: a new user is registered
+     Given user is not registered
+      When user registers with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      Then user already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+
+  Scenario: user registers with an already used email
+     Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      When user registers with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      Then operation is rejected with the message "Email address already registered!"
+
+  Scenario: register with an invalid email
+     Given user is not registered
+      When user registers with name "Pepe Suarez" and mail "pepe"
+      Then operation is rejected with the message "Invalid email address!"
+
+  Scenario: list users
+     Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+       And user is already registered with name "Andrea Suarez" and mail "andrea@fi.uba.ar"
+      When users are listed
+      Then get a list of 2 users

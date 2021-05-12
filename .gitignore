@@ -146,3 +146,9 @@ Pipfile*
 
 ### SQLite ###
 *.db
+
+# macOS
+*.DS_Store
+
+# VSCode
+.vscode

@@ -24,6 +24,11 @@ Flask-Cors = "^3.0.9"
 SQLAlchemy = "1.3.24"
 graphene-sqlalchemy = "^2.3.0"
 Flask-GraphQL = "^2.0.1"
+snapshottest = "^0.6.0"
+pylint = "^2.8.2"
+behave = "^1.2.6"
+firebase-admin = "^5.0.0"
+python-dotenv = "^0.17.1"
 
 [tool.poetry.dev-dependencies]
 nox = "^2020.8.22"
@@ -41,7 +46,7 @@ coverage-badge = "^1.0.1"
 coverage = "^5.5"
 
 [tool.poetry.extras]
-testing = ["pytest", "pytest-cov", "pytest-xdist"]
+testing = ["pytest", "pytest-cov", "pytest-xdist", "behave"]
 
 [tool.black]
 line-length = 88
