@@ -8,6 +8,7 @@ from graphql import GraphQLError
 from promise import Promise
 
 from frux_app_server.constants import Category, State, categories, states
+from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectState as ProjectStateModel
@@ -52,6 +53,13 @@ class Hashtag(SQLAlchemyObjectType):
         interfaces = (graphene.relay.Node,)
 
 
+class Admin(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Registered tokens with user information'
+        model = AdminModel
+        interfaces = (graphene.relay.Node,)
+
+
 def requires_auth(func):
     '''
     Authorization decorator for graphql queries/objects.
@@ -65,9 +73,15 @@ def requires_auth(func):
         if 'Authorization' not in info.context.headers:
             raise GraphQLError('Missing Bearer token')
         try:
-            userinfo = auth.verify_id_token(
-                info.context.headers['Authorization'].split()[-1]
-            )
+            token = info.context.headers['Authorization'].split()[-1]
+            userinfo = AdminModel.query.get(token)
+            if not userinfo:
+                user_email = auth.verify_id_token(token)
+                admin = AdminModel(token=token, email=user_email)
+                db.session.add(admin)
+                db.session.commit()
+            else:
+                user_email = userinfo.email
         except auth.ExpiredIdTokenError as e:
             raise GraphQLError('Expired token error') from e
         except auth.InvalidIdTokenError as e:
@@ -77,10 +91,10 @@ def requires_auth(func):
 
         try:
             info.context.user = (
-                db.session.query(UserModel).filter_by(email=userinfo['email']).one()
+                db.session.query(UserModel).filter_by(email=user_email).one()
             )
         except sqlalchemy.orm.exc.NoResultFound:
-            info.context.user = UserModel(email=userinfo['email'])
+            info.context.user = UserModel(email=user_email)
             db.session.add(info.context.user)
             db.session.commit()
         return func(obj, info, **kwargs)
@@ -132,6 +146,22 @@ class UserMutation(graphene.Mutation):
             return Promise.reject(GraphQLError('Email address already registered!'))
 
         return UserMutation(user=user)
+
+
+class AdminMutation(graphene.Mutation):
+    class Arguments:
+        email = graphene.String(required=True)
+
+    admin = graphene.Field(lambda: Admin)
+
+    def mutate(self, token, email):
+
+        admin = AdminModel(token=token, email=email)
+
+        db.session.add(admin)
+        db.session.commit()
+
+        return AdminMutation(admin=admin)
 
 
 class ProjectMutation(graphene.Mutation):
@@ -206,6 +236,7 @@ class ProjectMutation(graphene.Mutation):
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
+    mutate_admin = AdminMutation.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
