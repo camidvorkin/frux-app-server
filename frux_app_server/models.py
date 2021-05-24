@@ -42,3 +42,10 @@ class Project(db.Model):  # type:ignore
     state = db.relationship(ProjectState, backref='pstate')
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
+
+
+class Admin(db.Model):  # type:ignore
+    __tablename__ = 'admin'
+    token = db.Column(db.String, primary_key=True)
+    email = db.Column(db.String)
+    user_id = db.Column(db.String)
