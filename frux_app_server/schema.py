@@ -233,7 +233,7 @@ class ProjectMutation(graphene.Mutation):
         for h in hashtags:
             hashtag_model = HashtagModel(hashtag=h, id_project=id_project)
             db.session.add(hashtag_model)
-        db.session.commit()
+            db.session.commit()
 
         return ProjectMutation(project=project)
 
