@@ -76,8 +76,11 @@ def requires_auth(func):
             token = info.context.headers['Authorization'].split()[-1]
             userinfo = AdminModel.query.get(token)
             if not userinfo:
-                user_email = auth.verify_id_token(token)
-                admin = AdminModel(token=token, email=user_email)
+                userinfo = auth.verify_id_token(token)
+                user_email = userinfo['email']
+                admin = AdminModel(
+                    token=token, email=user_email, user_id=userinfo['user_id']
+                )
                 db.session.add(admin)
                 db.session.commit()
             else:
@@ -123,6 +126,7 @@ class Query(graphene.ObjectType):
     all_projects = SQLAlchemyConnectionField(Project)
     all_hashtags = SQLAlchemyConnectionField(Hashtag)
     all_project_states = SQLAlchemyConnectionField(ProjectState)
+    all_admin = SQLAlchemyConnectionField(Admin)
 
 
 class UserMutation(graphene.Mutation):
@@ -151,12 +155,13 @@ class UserMutation(graphene.Mutation):
 class AdminMutation(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
+        user_id = graphene.String(required=True)
 
     admin = graphene.Field(lambda: Admin)
 
-    def mutate(self, token, email):
+    def mutate(self, token, email, user_id):
 
-        admin = AdminModel(token=token, email=email)
+        admin = AdminModel(token=token, email=email, user_id=user_id)
 
         db.session.add(admin)
         db.session.commit()

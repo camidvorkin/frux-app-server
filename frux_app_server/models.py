@@ -48,3 +48,4 @@ class Admin(db.Model):  # type:ignore
     __tablename__ = 'admin'
     token = db.Column(db.String, primary_key=True)
     email = db.Column(db.String)
+    user_id = db.Column(db.String)
