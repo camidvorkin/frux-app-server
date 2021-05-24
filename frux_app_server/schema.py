@@ -78,11 +78,6 @@ def requires_auth(func):
             if not userinfo:
                 userinfo = auth.verify_id_token(token)
                 user_email = userinfo['email']
-                admin = AdminModel(
-                    token=token, email=user_email, user_id=userinfo['user_id']
-                )
-                db.session.add(admin)
-                db.session.commit()
             else:
                 user_email = userinfo.email
         except auth.ExpiredIdTokenError as e:
