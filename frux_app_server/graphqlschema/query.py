@@ -1,7 +1,8 @@
 import graphene
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 
-from .object import Admin, Hashtag, Project, ProjectStage, User
+from .filters import FruxFilterableConnectionField
+from .object import Admin, Hashtag, Project, ProjectStage, User, UserConnection
 from .utils import requires_auth
 
 
@@ -14,7 +15,7 @@ class Query(graphene.ObjectType):
     def resolve_profile(self, info):
         return info.context.user
 
-    all_users = SQLAlchemyConnectionField(User)
+    all_users = FruxFilterableConnectionField(UserConnection)
     all_projects = SQLAlchemyConnectionField(Project)
     all_hashtags = SQLAlchemyConnectionField(Hashtag)
     all_project_stages = SQLAlchemyConnectionField(ProjectStage)

@@ -259,6 +259,26 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "datadog"
+version = "0.41.0"
+description = "The Datadog Python library"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+decorator = ">=3.3.2"
+requests = ">=2.6.0"
+
+[[package]]
+name = "decorator"
+version = "5.0.9"
+description = "Decorators for Humans"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "distlib"
 version = "0.3.1"
 description = "Distribution utilities"
@@ -648,6 +668,18 @@ SQLAlchemy = ">=1.2,<2"
 [package.extras]
 dev = ["tox (==3.7.0)", "coveralls (==1.10.0)", "pre-commit (==1.14.4)"]
 test = ["pytest (==4.3.1)", "mock (==2.0.0)", "pytest-cov (==2.6.1)", "sqlalchemy-utils (==0.33.9)", "pytest-benchmark (==3.2.1)"]
+
+[[package]]
+name = "graphene-sqlalchemy-filter"
+version = "1.12.2"
+description = "Filters for Graphene SQLAlchemy integration"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+graphene-sqlalchemy = ">=2.1.0,<3"
+SQLAlchemy = "<2"
 
 [[package]]
 name = "graphql-core"
@@ -1554,7 +1586,7 @@ testing = ["pytest", "pytest-cov", "pytest-xdist", "behave"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "6110a9ca090c3edc975e3a63c9a973c10e9d7c671c389211ba8c066495a62f66"
+content-hash = "073616dc1d954a3a8aee37920aefbf322cb83cd8fd576eb26facca7964917b34"
 
 [metadata.files]
 alembic = [
@@ -1738,6 +1770,14 @@ coverage-badge = [
     {file = "coverage-badge-1.0.1.tar.gz", hash = "sha256:142fd121f3bd14956aff3c45bff6f8bc37bd74c6350626a950ebb6accb24276e"},
     {file = "coverage_badge-1.0.1-py2.py3-none-any.whl", hash = "sha256:3796de21b4e190d38beb8806956946fbdb02fe3a2a7452b460a9cff958009833"},
 ]
+datadog = [
+    {file = "datadog-0.41.0-py2.py3-none-any.whl", hash = "sha256:ab79ed38fb09ff1942c341e32849c4eeaf8b2e4d467b9e6bb1c6071808f454d6"},
+    {file = "datadog-0.41.0.tar.gz", hash = "sha256:3de1a43b8a8d5f6b19d162ec1b482dc5ab2636c59cf65e60589702304510a689"},
+]
+decorator = [
+    {file = "decorator-5.0.9-py3-none-any.whl", hash = "sha256:6e5c199c16f7a9f0e3a61a4a54b3d27e7dad0dbdde92b944426cb20914376323"},
+    {file = "decorator-5.0.9.tar.gz", hash = "sha256:72ecfba4320a893c53f9706bebb2d55c270c1e51a28789361aa93e4a21319ed5"},
+]
 distlib = [
     {file = "distlib-0.3.1-py2.py3-none-any.whl", hash = "sha256:8c09de2c67b3e7deef7184574fc060ab8a793e7adbb183d942c389c8b13c52fb"},
     {file = "distlib-0.3.1.zip", hash = "sha256:edf6116872c863e1aa9d5bb7cb5e05a022c519a4594dc703843343a9ddd9bff1"},
@@ -1869,6 +1909,10 @@ graphene = [
 graphene-sqlalchemy = [
     {file = "graphene-sqlalchemy-2.3.0.tar.gz", hash = "sha256:2b1a9cf4ed44aec78140605f38061a79b51be5902400d10c3d19b2cf64046215"},
     {file = "graphene_sqlalchemy-2.3.0-py2.py3-none-any.whl", hash = "sha256:97ed52bc0d01d757df50d25b5bdd490a2327778d41223d4e084d38a239925e8e"},
+]
+graphene-sqlalchemy-filter = [
+    {file = "graphene-sqlalchemy-filter-1.12.2.tar.gz", hash = "sha256:92057bc7bbb06a4c7351c89c267d3696e620189877e40d66f3857637caa6423a"},
+    {file = "graphene_sqlalchemy_filter-1.12.2-py3-none-any.whl", hash = "sha256:c71ea3a4bb5941d82e5d1eaf50a525d796fd39fe106b0023157821e2d3339a7e"},
 ]
 graphql-core = [
     {file = "graphql-core-2.3.2.tar.gz", hash = "sha256:aac46a9ac524c9855910c14c48fc5d60474def7f99fd10245e76608eba7af746"},
