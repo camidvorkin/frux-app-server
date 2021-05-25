@@ -40,15 +40,15 @@ class UserMutation(graphene.Mutation):
 
 class UpdateUser(graphene.Mutation):
     class Arguments:
-        user_id = graphene.Int(required=True)
         email = graphene.String()
         name = graphene.String()
 
     user = graphene.Field(lambda: User)
 
-    def mutate(self, info, user_id, name, email):  # pylint: disable=unused-argument
+    @requires_auth
+    def mutate(self, info, name, email):  # pylint: disable=unused-argument
 
-        user = UserModel.query.get(user_id)
+        user = info.context.user
         if name:
             user.name = name
         if email:
