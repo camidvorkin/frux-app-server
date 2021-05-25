@@ -17,14 +17,14 @@ QUERY_ALL_PROJECT = '''
 '''
 
 MUTATION_NEW_PROJECT = '''
-    mutation NewProject($description: String!, $userId: Int!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $state: String) {
-        mutateProject(userId: $userId, name: $name, description: $description, goal: $goal, category: $category, state: $state, hashtags: $hashtags) {
+    mutation NewProject($description: String!, $userId: Int!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
+        mutateProject(userId: $userId, name: $name, description: $description, goal: $goal, category: $category, stage: $stage, hashtags: $hashtags) {
             project {
                 name,
                 description,
                 goal,
                 category,
-                state
+                stage
             }
         }
     }
@@ -44,7 +44,7 @@ def step_impl(context, userId, name):
     variables['userId'] = int(userId)
     variables['name'] = name
     variables['category'] = None
-    variables['state'] = None
+    variables['stage'] = None
 
 
 @given('is about "{description}"')
@@ -59,10 +59,10 @@ def step_impl(context, category):
     variables['category'] = category
 
 
-@given('the state is "{state}"')
-@when('the state is "{state}"')
-def step_impl(context, state):
-    variables['state'] = state
+@given('the stage is "{stage}"')
+@when('the stage is "{stage}"')
+def step_impl(context, stage):
+    variables['stage'] = stage
 
 
 @when('hashtags "{hashtags}"')
@@ -89,9 +89,9 @@ def step_impl(context):
 
 
 @then(
-    'the project "{name}", description "{description}", category "{category}", state "{state}" and goal {goal} is created correctly'
+    'the project "{name}", description "{description}", category "{category}", stage "{stage}" and goal {goal} is created correctly'
 )
-def step_impl(context, name, description, goal, category, state):
+def step_impl(context, name, description, goal, category, stage):
     res = json.loads(context.response.data.decode())
     assert res == {
         "data": {
@@ -101,7 +101,7 @@ def step_impl(context, name, description, goal, category, state):
                     "description": str(description),
                     "goal": int(goal),
                     "category": str(category),
-                    "state": str(state),
+                    "stage": str(stage),
                 }
             }
         }

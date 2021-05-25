@@ -1,7 +1,7 @@
 """SQLAlchemy models."""
 from flask_sqlalchemy import SQLAlchemy
 
-from .graphqlschema.constants import Category, State
+from .graphqlschema.constants import Category, Stage, State
 
 db = SQLAlchemy()
 
@@ -21,10 +21,10 @@ class Hashtag(db.Model):  # type:ignore
     id_project = db.Column(db.Integer, db.ForeignKey('project.id'))
 
 
-class ProjectState(db.Model):  # type:ignore
-    __tablename__ = 'project_state'
+class ProjectStage(db.Model):  # type:ignore
+    __tablename__ = 'project_stage'
     id = db.Column(db.Integer, primary_key=True)
-    state = db.Column(db.Enum(State))
+    stage = db.Column(db.Enum(Stage))
     description = db.Column(db.String)
     goal = db.Column(db.Float)
 
@@ -34,12 +34,13 @@ class Project(db.Model):  # type:ignore
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     description = db.Column(db.String)
+    current_state = db.Column(db.Enum(State))
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     owner = db.relationship(User, backref='creator')
     category = db.Column(db.Enum(Category))
-    project_state_id = db.Column(db.Integer, db.ForeignKey('project_state.id'))
-    state = db.relationship(ProjectState, backref='pstate')
+    project_stage_id = db.Column(db.Integer, db.ForeignKey('project_stage.id'))
+    stage = db.relationship(ProjectStage, backref='pstage')
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
 

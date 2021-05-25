@@ -6,11 +6,11 @@ from promise import Promise
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Project as ProjectModel
-from frux_app_server.models import ProjectState as ProjectStateModel
+from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
-from .constants import Category, State, categories, states
+from .constants import Category, Stage, State, categories, stages
 from .object import Admin, Project, User
 from .utils import is_valid_email, requires_auth
 
@@ -83,9 +83,9 @@ class ProjectMutation(graphene.Mutation):
         goal = graphene.Int(required=True)
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
-        state = graphene.String()
-        state_goal = graphene.Int()
-        state_description = graphene.String()
+        stage = graphene.String()
+        stage_goal = graphene.Int()
+        stage_description = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
 
@@ -100,9 +100,9 @@ class ProjectMutation(graphene.Mutation):
         goal,
         hashtags=None,
         category=(Category.OTHERS.value),
-        state=(State.IN_PROGRESS.value),
-        state_goal=0,
-        state_description="",
+        stage=(Stage.IN_PROGRESS.value),
+        stage_goal=0,
+        stage_description="",
         latitude="0.0",
         longitude="0.0",
     ):
@@ -113,25 +113,26 @@ class ProjectMutation(graphene.Mutation):
             return Promise.reject(
                 GraphQLError('Invalid Category! Try with:' + ",".join(categories))
             )
-        if state not in states:
+        if stage not in stages:
             return Promise.reject(
-                GraphQLError('Invalid State! Try with:' + ",".join(states))
+                GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
             )
 
-        project_state = ProjectStateModel(
-            state=state, goal=state_goal, description=state_description
+        project_stage = ProjectStageModel(
+            stage=stage, goal=stage_goal, description=stage_description
         )
-        db.session.add(project_state)
+        db.session.add(project_stage)
 
         project = ProjectModel(
             name=name,
             description=description,
             goal=goal,
             owner=info.context.user,
-            state=project_state,
+            stage=project_stage,
             category=category,
             latitude=latitude,
             longitude=longitude,
+            current_state=State.CREATED,
         )
         db.session.add(project)
         db.session.commit()
