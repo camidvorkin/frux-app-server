@@ -1,7 +1,7 @@
 """SQLAlchemy models."""
 from flask_sqlalchemy import SQLAlchemy
 
-from frux_app_server.constants import Category, State
+from .graphql.constants import Category, State
 
 db = SQLAlchemy()
 
