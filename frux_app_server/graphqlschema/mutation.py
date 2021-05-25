@@ -38,6 +38,27 @@ class UserMutation(graphene.Mutation):
         return UserMutation(user=user)
 
 
+class UpdateUser(graphene.Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
+        email = graphene.String()
+        name = graphene.String()
+
+    user = graphene.Field(lambda: User)
+
+    def mutate(self, info, user_id, name, email):  # pylint: disable=unused-argument
+
+        user = UserModel.query.get(user_id)
+        if name:
+            user.name = name
+        if email:
+            if not is_valid_email(email):
+                return Promise.reject(GraphQLError('Invalid email address!'))
+            user.email = email
+        db.session.commit()
+        return UpdateUser(user=user)
+
+
 class AdminMutation(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
@@ -128,3 +149,4 @@ class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
     mutate_admin = AdminMutation.Field()
+    mutate_update_user = UpdateUser.Field()
