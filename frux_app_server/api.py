@@ -4,14 +4,13 @@ import logging
 from flask_restx import Api
 
 from frux_app_server import __version__
-from frux_app_server.namespaces import default_namespace
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
 api = Api(prefix="/v1", version=__version__, validate=True)
-api.add_namespace(default_namespace, path='/hello')
+# api.add_namespace(default_namespace, path='/hello')
 
 
 @api.errorhandler
