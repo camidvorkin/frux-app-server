@@ -24,7 +24,7 @@ def upgrade():
     sa.Column('email', sa.String(), nullable=True),
     sa.Column('token', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email', name='unique_user_email')
+    sa.UniqueConstraint('email', name='unique_admin_email')
     )
     op.drop_table('administrators')
     # ### end Alembic commands ###

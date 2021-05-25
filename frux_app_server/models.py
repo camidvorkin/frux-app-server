@@ -1,7 +1,7 @@
 """SQLAlchemy models."""
 from flask_sqlalchemy import SQLAlchemy
 
-from .graphql.constants import Category, State
+from .graphqlschema.constants import Category, State
 
 db = SQLAlchemy()
 
