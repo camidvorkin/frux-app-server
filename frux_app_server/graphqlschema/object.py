@@ -7,12 +7,20 @@ from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 
+from .filters import FruxFilterableConnectionField
+
 
 class User(SQLAlchemyObjectType):
     class Meta:
         description = 'Registered users'
         model = UserModel
         interfaces = (graphene.relay.Node,)
+        connection_field_factory = FruxFilterableConnectionField.factory
+
+
+class UserConnections(graphene.Connection):
+    class Meta:
+        node = User
 
 
 class ProjectStage(SQLAlchemyObjectType):
@@ -27,6 +35,11 @@ class Project(SQLAlchemyObjectType):
         description = 'Registered projects'
         model = ProjectModel
         interfaces = (graphene.relay.Node,)
+
+
+class ProjectConnections(graphene.Connection):
+    class Meta:
+        node = Project
 
 
 class Hashtag(SQLAlchemyObjectType):
