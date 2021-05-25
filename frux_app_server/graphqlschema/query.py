@@ -1,7 +1,7 @@
 import graphene
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 
-from .object import Admin, Hashtag, Project, ProjectState, User
+from .object import Admin, Hashtag, Project, ProjectStage, User
 from .utils import requires_auth
 
 
@@ -17,5 +17,5 @@ class Query(graphene.ObjectType):
     all_users = SQLAlchemyConnectionField(User)
     all_projects = SQLAlchemyConnectionField(Project)
     all_hashtags = SQLAlchemyConnectionField(Hashtag)
-    all_project_states = SQLAlchemyConnectionField(ProjectState)
+    all_project_stages = SQLAlchemyConnectionField(ProjectStage)
     all_admin = SQLAlchemyConnectionField(Admin)

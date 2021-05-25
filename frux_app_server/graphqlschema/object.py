@@ -4,7 +4,7 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Project as ProjectModel
-from frux_app_server.models import ProjectState as ProjectStateModel
+from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 
 
@@ -15,10 +15,10 @@ class User(SQLAlchemyObjectType):
         interfaces = (graphene.relay.Node,)
 
 
-class ProjectState(SQLAlchemyObjectType):
+class ProjectStage(SQLAlchemyObjectType):
     class Meta:
-        description = 'Registered projects progress states'
-        model = ProjectStateModel
+        description = 'Registered projects progress stages'
+        model = ProjectStageModel
         interfaces = (graphene.relay.Node,)
 
 

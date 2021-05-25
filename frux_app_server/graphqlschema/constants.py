@@ -9,11 +9,21 @@ class Category(enum.Enum):
     OTHERS = 'OTHERS'
 
 
-class State(enum.Enum):
+class Stage(enum.Enum):
     IN_PROGRESS = 'IN_PROGRESS'
     ALMOST_DONE = 'ALMOST_DONE'
     COMPLETE = 'COMPLETE'
 
 
+class State(enum.Enum):
+    CREATED = 'CREATED'
+    ACTIVE = 'ACTIVE'
+    BLOCKED = 'BLOCKED'
+    CANCELLED = 'CANCELLED'
+    COMPLETE = 'COMPLETE'
+    EXPIRED = 'EXPIRED'
+
+
 categories = [category.value for category in Category]
+stages = [stage.value for stage in Stage]
 states = [state.value for state in State]
