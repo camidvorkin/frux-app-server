@@ -18,7 +18,7 @@ class User(SQLAlchemyObjectType):
         connection_field_factory = FruxFilterableConnectionField.factory
 
 
-class UserConnection(graphene.Connection):
+class UserConnections(graphene.Connection):
     class Meta:
         node = User
 
@@ -35,6 +35,11 @@ class Project(SQLAlchemyObjectType):
         description = 'Registered projects'
         model = ProjectModel
         interfaces = (graphene.relay.Node,)
+
+
+class ProjectConnections(graphene.Connection):
+    class Meta:
+        node = Project
 
 
 class Hashtag(SQLAlchemyObjectType):

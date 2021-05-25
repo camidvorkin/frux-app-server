@@ -2,7 +2,11 @@ import json
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
+from frux_app_server.models import Admin
+
 # pylint:disable=undefined-variable,unused-argument,function-redefined
+
+ADMIN_TOKEN = 'AdminTestAuthToken'
 
 QUERY_ALL_PROJECT = '''
     {
@@ -16,15 +20,29 @@ QUERY_ALL_PROJECT = '''
     }
 '''
 
+QUERY_ALL_PROJECT_FILTERS = '''
+    query SearchProjectByName($name: String!){
+        allProjects(filters: {name: $name}) {
+            edges {
+                node {
+                    id
+                }
+            }
+        }
+    }
+'''
+
 MUTATION_NEW_PROJECT = '''
-    mutation NewProject($description: String!, $userId: Int!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
-        mutateProject(userId: $userId, name: $name, description: $description, goal: $goal, category: $category, stage: $stage, hashtags: $hashtags) {
+    mutation NewProject($description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
+        mutateProject(name: $name, description: $description, goal: $goal, category: $category, stage: $stage, hashtags: $hashtags) {
             project {
                 name,
                 description,
                 goal,
                 category,
-                stage
+                stage {
+                    stage
+                }
             }
         }
     }
@@ -38,10 +56,17 @@ def step_impl(context):
     pass
 
 
-@given('project "{name}" has already been created for user {userId}')
-@when('user {userId} create a project "{name}"')
-def step_impl(context, userId, name):
-    variables['userId'] = int(userId)
+@given('user with mail "{email}" is authenticated')
+def step_impl(context, email):
+    admin = Admin(email=email, token=ADMIN_TOKEN)
+    with context.app.app_context():
+        context.db.session.add(admin)
+        context.db.session.commit()
+
+
+@given('project "{name}" has already been created for user')
+@when('user create a project "{name}"')
+def step_impl(context, name):
     variables['name'] = name
     variables['category'] = None
     variables['stage'] = None
@@ -78,6 +103,7 @@ def step_impl(context, goal):
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
     )
 
 
@@ -93,6 +119,9 @@ def step_impl(context):
 )
 def step_impl(context, name, description, goal, category, stage):
     res = json.loads(context.response.data.decode())
+    import pprint
+
+    pprint.pprint(res)
     assert res == {
         "data": {
             "mutateProject": {
@@ -101,7 +130,7 @@ def step_impl(context, name, description, goal, category, stage):
                     "description": str(description),
                     "goal": int(goal),
                     "category": str(category),
-                    "stage": str(stage),
+                    "stage": {"stage": str(stage)},
                 }
             }
         }
@@ -113,3 +142,14 @@ def step_impl(context, n):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert len(res['data']['allProjects']['edges']) == int(n)
+
+
+@when(u'projects are listed filtering by name "{name}"')
+def step_impl(context, name):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_ALL_PROJECT_FILTERS,
+            'variables': json.dumps({'name': name}),
+        },
+    )
