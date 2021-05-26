@@ -27,6 +27,15 @@ QUERY_PROFILE = '''
     }
 '''
 
+QUERY_SINGLE_USER = '''
+    query FindUser($dbId: Int!){
+        user(dbId: $dbId) {
+            name,
+            email
+        }
+    }
+'''
+
 MUTATION_NEW_USER = '''
     mutation NewUser($email: String!, $name: String!) {
         mutateUser(email: $email, name: $name) {
@@ -78,3 +87,20 @@ def step_impl(context, name, email):
     with context.app.app_context():
         context.db.session.add(user)
         context.db.session.commit()
+
+
+@when(u'user with id {db_id} is listed')
+def step_impl(context, db_id):
+    variables = {'dbId': int(db_id)}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps(variables)},
+    )
+
+
+@then(u'get user with name "{name}" and mail "{email}"')
+def step_impl(context, name, email):
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    assert res['data']['user']['email'] == email
+    assert res['data']['user']['name'] == name
