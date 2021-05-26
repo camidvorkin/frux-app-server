@@ -48,6 +48,15 @@ MUTATION_NEW_PROJECT = '''
     }
 '''
 
+QUERY_SINGLE_PROJECT = '''
+    query FindProject($dbId: Int!){
+        project(dbId: $dbId) {
+            name,
+            description
+        }
+    }
+'''
+
 variables = {}
 
 
@@ -119,9 +128,6 @@ def step_impl(context):
 )
 def step_impl(context, name, description, goal, category, stage):
     res = json.loads(context.response.data.decode())
-    import pprint
-
-    pprint.pprint(res)
     assert res == {
         "data": {
             "mutateProject": {
@@ -144,7 +150,7 @@ def step_impl(context, n):
     assert len(res['data']['allProjects']['edges']) == int(n)
 
 
-@when(u'projects are listed filtering by name "{name}"')
+@when('projects are listed filtering by name "{name}"')
 def step_impl(context, name):
     context.response = context.client.post(
         '/graphql',
@@ -153,3 +159,22 @@ def step_impl(context, name):
             'variables': json.dumps({'name': name}),
         },
     )
+
+
+@when('project with id {db_id} is listed')
+def step_impl(context, db_id):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_SINGLE_PROJECT,
+            'variables': json.dumps({'dbId': int(db_id)}),
+        },
+    )
+
+
+@then('get project with name "{name}" and description "{description}"')
+def step_impl(context, name, description):
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    assert res['data']['project']['description'] == description
+    assert res['data']['project']['name'] == name

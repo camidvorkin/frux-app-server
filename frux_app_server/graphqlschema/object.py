@@ -11,6 +11,8 @@ from .filters import FruxFilterableConnectionField
 
 
 class User(SQLAlchemyObjectType):
+    db_id = graphene.Int(source='id')
+
     class Meta:
         description = 'Registered users'
         model = UserModel
@@ -24,6 +26,8 @@ class UserConnections(graphene.Connection):
 
 
 class ProjectStage(SQLAlchemyObjectType):
+    db_id = graphene.Int(source='id')
+
     class Meta:
         description = 'Registered projects progress stages'
         model = ProjectStageModel
@@ -31,6 +35,8 @@ class ProjectStage(SQLAlchemyObjectType):
 
 
 class Project(SQLAlchemyObjectType):
+    db_id = graphene.Int(source='id')
+
     class Meta:
         description = 'Registered projects'
         model = ProjectModel
@@ -43,6 +49,8 @@ class ProjectConnections(graphene.Connection):
 
 
 class Hashtag(SQLAlchemyObjectType):
+    db_id = graphene.Int(source='id')
+
     class Meta:
         description = 'Registered hashtags for projects'
         model = HashtagModel

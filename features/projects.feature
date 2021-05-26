@@ -61,3 +61,11 @@ Feature: projects
       And the category is "MOVIE"
       And the total amount to be collected is 10000
       Then operation is rejected with the message "Invalid Category! Try with:SPORTS,ART,MUSIC,OTHERS"
+
+  Scenario: find project by id
+     Given user with mail "johndoe@gmail.com" is authenticated
+      And project "Teaching Football Program" has already been created for user
+      And is about "Teaching kids to play football"
+      And the total amount to be collected is 200
+      When project with id 1 is listed
+      Then get project with name "Teaching Football Program" and description "Teaching kids to play football"

@@ -20,3 +20,9 @@ Feature: users
        And user is already registered with name "Andrea Suarez" and mail "andrea@fi.uba.ar"
       When users are listed
       Then get a list of 2 users
+
+  Scenario: find user by id
+     Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+       And user is already registered with name "Andrea Suarez" and mail "andrea@fi.uba.ar"
+      When user with id 1 is listed
+      Then get user with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
