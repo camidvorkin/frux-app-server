@@ -4,6 +4,8 @@ from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
+ADMIN_TOKEN = 'AdminTestAuthToken'
+
 QUERY_ALL_HASHTAGS = '''
 {
     allHashtags {
@@ -18,8 +20,8 @@ QUERY_ALL_HASHTAGS = '''
 '''
 
 MUTATION_NEW_PROJECT_WITH_HASHTAGS = '''
-    mutation NewProject($description: String!, $userId: Int!, $name: String!, $goal: Int!, $hashtags: [String]) {
-        mutateProject(userId: $userId, name: $name, description: $description, goal: $goal, hashtags: $hashtags) {
+    mutation NewProject($description: String!, $name: String!, $goal: Int!, $hashtags: [String]) {
+        mutateProject(name: $name, description: $description, goal: $goal, hashtags: $hashtags) {
             project {
                 name
             }
@@ -28,12 +30,11 @@ MUTATION_NEW_PROJECT_WITH_HASHTAGS = '''
 '''
 
 
-@given(u'a new project valid project with hashtags "{hashtags}"')
+@given(u'a new project was created by the user with hashtags "{hashtags}"')
 def step_impl(context, hashtags):
     variables = {
         'hashtags': hashtags.split(","),
         'description': "descriptionTest",
-        'userId': 1,
         'name': "nameTest",
         'goal': 1,
     }
@@ -43,6 +44,7 @@ def step_impl(context, hashtags):
             'query': MUTATION_NEW_PROJECT_WITH_HASHTAGS,
             'variables': json.dumps(variables),
         },
+        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
     )
 
 

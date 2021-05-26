@@ -79,5 +79,5 @@ repos:
       language: system
       entry: poetry run coverage-badge -o coverage-badge -f
       types: [python]
-      stages: [push]
+      stages: [push, commit]
       pass_filenames: false
