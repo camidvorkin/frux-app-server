@@ -22,9 +22,7 @@ QUERY_ALL_HASHTAGS = '''
 MUTATION_NEW_PROJECT_WITH_HASHTAGS = '''
     mutation NewProject($description: String!, $name: String!, $goal: Int!, $hashtags: [String]) {
         mutateProject(name: $name, description: $description, goal: $goal, hashtags: $hashtags) {
-            project {
-                name
-            }
+            name
         }
     }
 '''

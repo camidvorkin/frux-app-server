@@ -2,8 +2,6 @@ import json
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
-from frux_app_server.models import Admin
-
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
 ADMIN_TOKEN = 'AdminTestAuthToken'
@@ -35,14 +33,12 @@ QUERY_ALL_PROJECT_FILTERS = '''
 MUTATION_NEW_PROJECT = '''
     mutation NewProject($description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
         mutateProject(name: $name, description: $description, goal: $goal, category: $category, stage: $stage, hashtags: $hashtags) {
-            project {
-                name,
-                description,
-                goal,
-                category,
-                stage {
-                    stage
-                }
+            name,
+            description,
+            goal,
+            category,
+            stage {
+                stage
             }
         }
     }
@@ -63,14 +59,6 @@ variables = {}
 @given('a new project')
 def step_impl(context):
     pass
-
-
-@given('user with mail "{email}" is authenticated')
-def step_impl(context, email):
-    admin = Admin(email=email, token=ADMIN_TOKEN)
-    with context.app.app_context():
-        context.db.session.add(admin)
-        context.db.session.commit()
 
 
 @given('project "{name}" has already been created for user')
@@ -131,13 +119,11 @@ def step_impl(context, name, description, goal, category, stage):
     assert res == {
         "data": {
             "mutateProject": {
-                "project": {
-                    "name": str(name),
-                    "description": str(description),
-                    "goal": int(goal),
-                    "category": str(category),
-                    "stage": {"stage": str(stage)},
-                }
+                "name": str(name),
+                "description": str(description),
+                "goal": int(goal),
+                "category": str(category),
+                "stage": {"stage": str(stage)},
             }
         }
     }

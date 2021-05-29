@@ -24,7 +24,4 @@ class ProjectFilter(FilterSet):
 
 
 class FruxFilterableConnectionField(FilterableConnectionField):
-    filters = {
-        # UserModel: UserFilter(),
-        ProjectModel: ProjectFilter()
-    }
+    filters = {UserModel: UserFilter(), ProjectModel: ProjectFilter()}
