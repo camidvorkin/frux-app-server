@@ -20,7 +20,7 @@ class UserMutation(graphene.Mutation):
         email = graphene.String(required=True)
         name = graphene.String(required=True)
 
-    user = graphene.Field(lambda: User)
+    Output = User
 
     def mutate(self, info, name, email):  # pylint: disable=unused-argument
 
@@ -35,7 +35,7 @@ class UserMutation(graphene.Mutation):
         except sqlalchemy.exc.IntegrityError:
             return Promise.reject(GraphQLError('Email address already registered!'))
 
-        return UserMutation(user=user)
+        return user
 
 
 class UpdateUser(graphene.Mutation):
@@ -43,7 +43,7 @@ class UpdateUser(graphene.Mutation):
         email = graphene.String()
         name = graphene.String()
 
-    user = graphene.Field(lambda: User)
+    Output = User
 
     @requires_auth
     def mutate(self, info, name=None, email=None):  # pylint: disable=unused-argument
@@ -56,7 +56,7 @@ class UpdateUser(graphene.Mutation):
                 return Promise.reject(GraphQLError('Invalid email address!'))
             user.email = email
         db.session.commit()
-        return UpdateUser(user=user)
+        return user
 
 
 class AdminMutation(graphene.Mutation):
@@ -64,6 +64,7 @@ class AdminMutation(graphene.Mutation):
         email = graphene.String(required=True)
         user_id = graphene.String(required=True)
 
+    Output = Admin
     admin = graphene.Field(lambda: Admin)
 
     def mutate(self, token, email, user_id):
@@ -73,7 +74,7 @@ class AdminMutation(graphene.Mutation):
         db.session.add(admin)
         db.session.commit()
 
-        return AdminMutation(admin=admin)
+        return admin
 
 
 class ProjectMutation(graphene.Mutation):
@@ -89,7 +90,7 @@ class ProjectMutation(graphene.Mutation):
         latitude = graphene.String()
         longitude = graphene.String()
 
-    project = graphene.Field(lambda: Project)
+    Output = Project
 
     @requires_auth
     def mutate(
@@ -143,7 +144,7 @@ class ProjectMutation(graphene.Mutation):
             db.session.add(hashtag_model)
             db.session.commit()
 
-        return ProjectMutation(project=project)
+        return project
 
 
 class Mutation(graphene.ObjectType):

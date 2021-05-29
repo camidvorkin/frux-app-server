@@ -39,10 +39,8 @@ QUERY_SINGLE_USER = '''
 MUTATION_NEW_USER = '''
     mutation NewUser($email: String!, $name: String!) {
         mutateUser(email: $email, name: $name) {
-            user {
-                name,
-                email,
-            }
+            name,
+            email,
         }
     }
 '''
@@ -66,7 +64,7 @@ def step_impl(context, name, email):
 def step_impl(context, name, email):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
-    assert res == {"data": {"mutateUser": {"user": {"name": name, "email": email}}}}
+    assert res == {"data": {"mutateUser": {"name": name, "email": email}}}
 
 
 @when('users are listed')
