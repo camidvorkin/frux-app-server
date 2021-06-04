@@ -1,9 +1,11 @@
 import json
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
+from commons import authenticate_user
 
 from frux_app_server.models import User
 
+ADMIN_TOKEN = 'AdminTestAuthToken'
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
 QUERY_ALL_USERS = '''
@@ -44,6 +46,18 @@ MUTATION_NEW_USER = '''
         }
     }
 '''
+
+MUTATION_UPDATE_USER = '''
+    mutation UpdateUser($email: String!, $name: String!) {
+        mutateUpdateUser(name: $name, email: $email) {
+            name,
+            email,
+            dbId
+        }
+    }
+'''
+
+updated_variables = {}
 
 
 @given('user is not registered')
@@ -102,3 +116,31 @@ def step_impl(context, name, email):
     res = json.loads(context.response.data.decode())
     assert res['data']['user']['email'] == email
     assert res['data']['user']['name'] == name
+
+
+@when('user update their username to "{name}" and their mail to "{email}"')
+def step_impl(context, name, email):
+    updated_variables['name'] = name
+    updated_variables['email'] = email
+    authenticate_user(context, email, ADMIN_TOKEN)
+
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': MUTATION_UPDATE_USER,
+            'variables': json.dumps(updated_variables),
+        },
+        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+    )
+
+
+@then('the user\'s information change')
+def step_impl(context):
+    # Get updated project
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 2})},
+    )
+    res = json.loads(context.response.data.decode())
+    assert res['data']['user']['name'] == updated_variables['name']
+    assert res['data']['user']['email'] == updated_variables['email']

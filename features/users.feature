@@ -26,3 +26,8 @@ Feature: users
        And user is already registered with name "Andrea Suarez" and mail "andrea@fi.uba.ar"
       When user with id 1 is listed
       Then get user with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+
+  Scenario: update user information
+     Given user is already registered with name "Pepe Suarez" and mail "pepe@fi.uba.ar"
+      When user update their username to "Pepito" and their mail to "pepito@fi.uba.ar"
+      Then the user's information change

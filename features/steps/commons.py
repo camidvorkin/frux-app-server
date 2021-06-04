@@ -17,9 +17,13 @@ def step_impl(context, message):
     assert res['errors'][0]['message'] == message
 
 
-@given('user with mail "{email}" is authenticated')
-def step_impl(context, email):
-    admin = Admin(email=email, token=ADMIN_TOKEN)
+def authenticate_user(context, email, token=ADMIN_TOKEN):
+    admin = Admin(email=email, token=token)
     with context.app.app_context():
         context.db.session.add(admin)
         context.db.session.commit()
+
+
+@given('user with mail "{email}" is authenticated')
+def step_impl(context, email):
+    authenticate_user(context, email, ADMIN_TOKEN)

@@ -1,8 +1,10 @@
 import json
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
+from commons import authenticate_user
 
 # pylint:disable=undefined-variable,unused-argument,function-redefined
+
 
 ADMIN_TOKEN = 'AdminTestAuthToken'
 
@@ -48,14 +50,15 @@ QUERY_SINGLE_PROJECT = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
             name,
-            description
+            description,
+            goal
         }
     }
 '''
 
 MUTATION_UPDATE_PROJECT = '''
-    mutation UpdateProject($idProject: Int!, $description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
-        mutateProject(idProject: $idProject, name: $name, description: $description) {
+    mutation UpdateProject($idProject: Int!, $description: String!, $name: String!) {
+        mutateUpdateProject(idProject: $idProject, name: $name, description: $description) {
             name,
             description,
         }
@@ -63,6 +66,7 @@ MUTATION_UPDATE_PROJECT = '''
 '''
 
 variables = {}
+updated_variables = {}
 
 
 @given('a new project')
@@ -113,14 +117,16 @@ def step_impl(context, goal):
     )
 
 
-@given('a old "{x}" project')
-def step_impl(context, x):
-    variables['name'] = x
+@given('an old project')
+def step_impl(context):
+    variables['name'] = "Old project"
     variables['category'] = "ART"
     variables['stage'] = "IN_PROGRESS"
     variables['goal'] = 1
     variables['hashtags'] = []
-    variables['description'] = x
+    variables['description'] = "Old project"
+    authenticate_user(context, "olduser@gmail.com", ADMIN_TOKEN)
+
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
@@ -184,29 +190,39 @@ def step_impl(context, db_id):
 
 @when('project new name is "{y}"')
 def step_impl(context, y):
-    variables['name'] = y
+    updated_variables['name'] = y
 
 
 @when('project new description is "{y}"')
 def step_impl(context, y):
-    variables['description'] = y
+    updated_variables['description'] = y
 
 
-@then(u'the information change')
+@then('the project\'s information change')
 def step_impl(context):
-    res = json.loads(context.response.data.decode())
-    print(res)
-    assert res['data']['project']['description'] == "x"
-    assert res['data']['project']['name'] == "x"
+    # Mutation
+    updated_variables['idProject'] = 1
     context.response = context.client.post(
         '/graphql',
         json={
             'query': MUTATION_UPDATE_PROJECT,
-            'variables': json.dumps({'dbId': int(db_id)}),
+            'variables': json.dumps(updated_variables),
+        },
+        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+    )
+
+    # Get updated project
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_SINGLE_PROJECT,
+            'variables': json.dumps({'dbId': int(1)}),
         },
     )
-    assert res['data']['project']['description'] == "y"
-    assert res['data']['project']['name'] == "y"
+    res = json.loads(context.response.data.decode())
+    assert res['data']['project']['description'] == updated_variables['description']
+    assert res['data']['project']['name'] == updated_variables['name']
+    assert res['data']['project']['goal'] == 1
 
 
 @then('get project with name "{name}" and description "{description}"')

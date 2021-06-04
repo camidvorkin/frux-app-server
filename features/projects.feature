@@ -71,7 +71,7 @@ Feature: projects
       Then get project with name "Teaching Football Program" and description "Teaching kids to play football"
 
   Scenario: update a project
-     Given a old "x" project
-      When project new name is "y"
-      And project new description is "y"
-      # Then the information change
+     Given an old project
+      When project new name is "New project"
+      And project new description is "Update old project"
+      Then the project's information change
