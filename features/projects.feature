@@ -69,3 +69,9 @@ Feature: projects
       And the total amount to be collected is 200
       When project with id 1 is listed
       Then get project with name "Teaching Football Program" and description "Teaching kids to play football"
+
+  Scenario: update a project
+     Given a old "x" project
+      When project new name is "y"
+      And project new description is "y"
+      Then the information change

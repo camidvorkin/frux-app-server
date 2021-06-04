@@ -53,6 +53,15 @@ QUERY_SINGLE_PROJECT = '''
     }
 '''
 
+MUTATION_UPDATE_PROJECT = '''
+    mutation UpdateProject($idProject: Int!, $description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
+        mutateProject(idProject: $idProject, name: $name, description: $description) {
+            name,
+            description,
+        }
+    }
+'''
+
 variables = {}
 
 
@@ -97,6 +106,21 @@ def step_impl(context, hashtags):
 @when('the total amount to be collected is {goal}')
 def step_impl(context, goal):
     variables['goal'] = int(goal)
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+    )
+
+
+@given('a old "{x}" project')
+def step_impl(context, x):
+    variables['name'] = x
+    variables['category'] = "ART"
+    variables['stage'] = "IN_PROGRESS"
+    variables['goal'] = 1
+    variables['hashtags'] = []
+    variables['description'] = x
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
@@ -156,6 +180,33 @@ def step_impl(context, db_id):
             'variables': json.dumps({'dbId': int(db_id)}),
         },
     )
+
+
+@when('project new name is "{y}"')
+def step_impl(context, y):
+    variables['name'] = y
+
+
+@when('project new description is "{y}"')
+def step_impl(context, y):
+    variables['description'] = y
+
+
+@then(u'the information change')
+def step_impl(context):
+    res = json.loads(context.response.data.decode())
+    print(res)
+    assert res['data']['project']['description'] == "x"
+    assert res['data']['project']['name'] == "x"
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': MUTATION_UPDATE_PROJECT,
+            'variables': json.dumps({'dbId': int(db_id)}),
+        },
+    )
+    assert res['data']['project']['description'] == "y"
+    assert res['data']['project']['name'] == "y"
 
 
 @then('get project with name "{name}" and description "{description}"')
