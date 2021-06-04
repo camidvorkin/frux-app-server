@@ -74,4 +74,4 @@ Feature: projects
      Given a old "x" project
       When project new name is "y"
       And project new description is "y"
-      Then the information change
+      # Then the information change
