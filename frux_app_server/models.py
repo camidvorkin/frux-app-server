@@ -6,12 +6,23 @@ from .graphqlschema.constants import Category, Stage, State
 db = SQLAlchemy()
 
 
+class Investments(db.Model):  # type:ignore
+    __tablename__ = 'investments'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    invested_amount = db.Column(db.Float)
+    date_of_investment = db.Column(db.DateTime)
+    project = db.relationship("Project", back_populates="investors")
+    user = db.relationship("User", back_populates="project_investments")
+
+
 class User(db.Model):  # type:ignore
     __tablename__ = 'user'
     __table_args__ = (db.UniqueConstraint('email', name='unique_user_email'),)
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     email = db.Column(db.String)
+    project_investments = db.relationship("Investments", back_populates="user")
 
 
 class Hashtag(db.Model):  # type:ignore
@@ -43,6 +54,7 @@ class Project(db.Model):  # type:ignore
     stage = db.relationship(ProjectStage, backref='pstage')
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
+    investors = db.relationship("Investments", back_populates="project")
 
 
 class Admin(db.Model):  # type:ignore

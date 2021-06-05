@@ -1,3 +1,5 @@
+import datetime
+
 import graphene
 import sqlalchemy
 from graphql import GraphQLError
@@ -5,13 +7,14 @@ from promise import Promise
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import Hashtag as HashtagModel
+from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
 from .constants import Category, Stage, State, categories, stages
-from .object import Admin, Project, User
+from .object import Admin, Investments, Project, User
 from .utils import is_valid_email, requires_auth
 
 
@@ -47,7 +50,6 @@ class UpdateUser(graphene.Mutation):
 
     @requires_auth
     def mutate(self, info, name=None, email=None):  # pylint: disable=unused-argument
-
         user = info.context.user
         if name:
             user.name = name
@@ -147,8 +149,92 @@ class ProjectMutation(graphene.Mutation):
         return project
 
 
+class UpdateProject(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        name = graphene.String()
+        description = graphene.String()
+        goal = graphene.Int()
+        hashtags = graphene.List(graphene.String)
+        category = graphene.String()
+        stage = graphene.String()
+        stage_goal = graphene.Int()
+        stage_description = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self,
+        info,
+        id_project,
+        name=None,
+        description=None,
+        goal=None,
+        hashtags=None,
+        category=None,
+        stage_description=None,
+    ):
+
+        project = ProjectModel.query.get(id_project)
+        if info.context.user != project.owner:
+            return Promise.reject(
+                GraphQLError('Invalid ownership. This user cannot modify this project')
+            )
+
+        if name:
+            project.name = name
+        if description:
+            project.description = description
+        if goal:
+            project.goal = goal
+        if hashtags:
+            id_project = project.id
+            for h in hashtags:
+                hashtag_model = HashtagModel(hashtag=h, id_project=id_project)
+                db.session.add(hashtag_model)
+                db.session.commit()
+        if category:
+            if category not in categories:
+                return Promise.reject(
+                    GraphQLError('Invalid Category! Try with:' + ",".join(categories))
+                )
+            project.category = category
+        if stage_description:
+            project.stage_description = stage_description
+
+        db.session.commit()
+        return project
+
+
+class InvestProject(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        invested_amount = graphene.Float(required=True)
+
+    Output = Investments
+
+    @requires_auth
+    def mutate(self, info, id_project, invested_amount):
+
+        invest = InvestmentsModel(
+            user_id=info.context.user.id,
+            project_id=id_project,
+            invested_amount=invested_amount,
+            date_of_investment=datetime.datetime.utcnow(),
+        )
+
+        db.session.add(invest)
+        db.session.commit()
+        return invest
+
+
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
     mutate_admin = AdminMutation.Field()
     mutate_update_user = UpdateUser.Field()
+    mutate_update_project = UpdateProject.Field()
+    mutate_invest_project = InvestProject.Field()
