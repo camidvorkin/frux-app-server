@@ -50,8 +50,7 @@ QUERY_SINGLE_PROJECT = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
             name,
-            description,
-            goal
+            description
         }
     }
 '''
@@ -222,7 +221,6 @@ def step_impl(context):
     res = json.loads(context.response.data.decode())
     assert res['data']['project']['description'] == updated_variables['description']
     assert res['data']['project']['name'] == updated_variables['name']
-    assert res['data']['project']['goal'] == 1
 
 
 @then('get project with name "{name}" and description "{description}"')

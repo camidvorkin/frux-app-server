@@ -22,6 +22,9 @@ class User(db.Model):  # type:ignore
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
     email = db.Column(db.String)
+    image_path = db.Column(db.String)
+    latitude = db.Column(db.String)
+    longitude = db.Column(db.String)
     project_investments = db.relationship("Investments", back_populates="user")
 
 
