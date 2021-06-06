@@ -38,7 +38,7 @@ MUTATION_NEW_PROJECT = '''
             name,
             description,
             goal,
-            category,
+            categoryName,
             stage {
                 stage
             }
@@ -119,7 +119,6 @@ def step_impl(context, goal):
 @given('an old project')
 def step_impl(context):
     variables['name'] = "Old project"
-    variables['category'] = "ART"
     variables['stage'] = "IN_PROGRESS"
     variables['goal'] = 1
     variables['hashtags'] = []
@@ -151,7 +150,7 @@ def step_impl(context, name, description, goal, category, stage):
                 "name": str(name),
                 "description": str(description),
                 "goal": int(goal),
-                "category": str(category),
+                "categoryName": str(category),
                 "stage": {"stage": str(stage)},
             }
         }
@@ -209,7 +208,6 @@ def step_impl(context):
         },
         headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
     )
-
     # Get updated project
     context.response = context.client.post(
         '/graphql',

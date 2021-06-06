@@ -4,6 +4,7 @@ from graphene_sqlalchemy import SQLAlchemyConnectionField
 from .filters import FruxFilterableConnectionField
 from .object import (
     Admin,
+    Category,
     Hashtag,
     Project,
     ProjectConnections,
@@ -40,3 +41,4 @@ class Query(graphene.ObjectType):
     all_hashtags = SQLAlchemyConnectionField(Hashtag)
     all_project_stages = SQLAlchemyConnectionField(ProjectStage)
     all_admin = SQLAlchemyConnectionField(Admin)
+    all_categories = SQLAlchemyConnectionField(Category)

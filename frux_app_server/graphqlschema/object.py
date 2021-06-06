@@ -4,6 +4,7 @@ import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
@@ -77,4 +78,11 @@ class Investments(SQLAlchemyObjectType):
     class Meta:
         description = 'Information of a project backed by a user'
         model = InvestmentsModel
+        interfaces = (graphene.relay.Node,)
+
+
+class Category(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Information of the category for projects in the system'
+        model = CategoryModel
         interfaces = (graphene.relay.Node,)
