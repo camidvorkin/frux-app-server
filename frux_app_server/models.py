@@ -1,7 +1,7 @@
 """SQLAlchemy models."""
 from flask_sqlalchemy import SQLAlchemy
 
-from .graphqlschema.constants import Category, Stage, State
+from .graphqlschema.constants import Stage, State
 
 db = SQLAlchemy()
 
@@ -40,6 +40,12 @@ class ProjectStage(db.Model):  # type:ignore
     goal = db.Column(db.Float)
 
 
+class Category(db.Model):  # type:ignore
+    __tablename__ = 'category'
+    name = db.Column(db.String, primary_key=True)
+    description = db.Column(db.String)
+
+
 class Project(db.Model):  # type:ignore
     __tablename__ = 'project'
     id = db.Column(db.Integer, primary_key=True)
@@ -49,7 +55,10 @@ class Project(db.Model):  # type:ignore
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     owner = db.relationship(User, backref='creator')
-    category = db.Column(db.Enum(Category))
+    category_name = db.Column(
+        db.String, db.ForeignKey('category.name'), default='Other'
+    )
+    category = db.relationship(Category, backref='projects')
     project_stage_id = db.Column(db.Integer, db.ForeignKey('project_stage.id'))
     stage = db.relationship(ProjectStage, backref='pstage')
     latitude = db.Column(db.String)

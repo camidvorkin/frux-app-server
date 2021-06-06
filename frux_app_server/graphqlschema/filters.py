@@ -19,7 +19,7 @@ class ProjectFilter(FilterSet):
         fields = {
             'name': ['eq', 'ne', 'in', 'ilike'],
             'description': ['eq', 'ne', 'in', 'ilike'],
-            'category': ['eq', 'ne', 'in', 'ilike'],
+            'category_name': ['eq', 'ne', 'in', 'ilike'],
         }
 
 
