@@ -6,6 +6,7 @@ from graphql import GraphQLError
 from promise import Promise
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
@@ -13,7 +14,7 @@ from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
-from .constants import Category, Stage, State, categories, stages
+from .constants import Stage, State, stages
 from .object import Admin, Investments, Project, User
 from .utils import is_valid_email, is_valid_location, requires_auth
 
@@ -121,7 +122,7 @@ class ProjectMutation(graphene.Mutation):
         description,
         goal,
         hashtags=None,
-        category=(Category.OTHERS.value),
+        category=None,
         stage=(Stage.IN_PROGRESS.value),
         stage_goal=0,
         stage_description="",
@@ -131,10 +132,12 @@ class ProjectMutation(graphene.Mutation):
         if not hashtags:
             hashtags = []
 
-        if category not in categories:
-            return Promise.reject(
-                GraphQLError('Invalid Category! Try with:' + ",".join(categories))
-            )
+        if (
+            category
+            and db.session.query(CategoryModel).filter_by(name=category).count() != 1
+        ):
+            return Promise.reject(GraphQLError('Invalid Category!'))
+
         if stage not in stages:
             return Promise.reject(
                 GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
@@ -151,7 +154,7 @@ class ProjectMutation(graphene.Mutation):
             goal=goal,
             owner=info.context.user,
             stage=project_stage,
-            category=category,
+            category_name=category,
             latitude=latitude,
             longitude=longitude,
             current_state=State.CREATED,
@@ -211,10 +214,8 @@ class UpdateProject(graphene.Mutation):
                 db.session.add(hashtag_model)
                 db.session.commit()
         if category:
-            if category not in categories:
-                return Promise.reject(
-                    GraphQLError('Invalid Category! Try with:' + ",".join(categories))
-                )
+            if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
+                return Promise.reject(GraphQLError('Invalid Category!'))
             project.category = category
         if stage:
             if stage not in stages:
