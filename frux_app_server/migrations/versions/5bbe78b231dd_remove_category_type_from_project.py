@@ -1,7 +1,7 @@
 """Remove category type from project
 
 Revision ID: 5bbe78b231dd
-Revises: fb527e57cffd
+Revises: c4fa1e8f4049
 Create Date: 2021-06-06 12:47:34.246587
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '5bbe78b231dd'
-down_revision = 'fb527e57cffd'
+down_revision = 'c4fa1e8f4049'
 branch_labels = None
 depends_on = None
 
