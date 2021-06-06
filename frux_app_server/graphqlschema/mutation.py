@@ -15,7 +15,7 @@ from frux_app_server.models import db
 
 from .constants import Category, Stage, State, categories, stages
 from .object import Admin, Investments, Project, User
-from .utils import is_valid_email, requires_auth
+from .utils import is_valid_email, is_valid_location, requires_auth
 
 
 class UserMutation(graphene.Mutation):
@@ -34,6 +34,9 @@ class UserMutation(graphene.Mutation):
 
         if not is_valid_email(email):
             return Promise.reject(GraphQLError('Invalid email address!'))
+
+        if not is_valid_location(latitude, longitude):
+            return Promise.reject(GraphQLError('Invalid location!'))
 
         user = UserModel(
             name=name,
@@ -70,7 +73,7 @@ class UpdateUser(graphene.Mutation):
             user.name = name
         if image_path:
             user.image_path = image_path
-        if latitude and longitude:
+        if latitude and longitude and is_valid_location(latitude, longitude):
             user.latitude = latitude
             user.longitude = longitude
         db.session.commit()

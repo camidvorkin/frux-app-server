@@ -17,6 +17,12 @@ def is_valid_email(email):
     )
 
 
+def is_valid_location(latitude, longitude):
+    return re.match(r"^(\-?([0-8]?[0-9](\.\d+)?|90(.[0]+)?))$", latitude) and re.match(
+        r"^(\-?([1]?[0-7]?[0-9](\.\d+)?|180((.[0]+)?)))$", longitude
+    )
+
+
 def requires_auth(func):
     '''
     Authorization decorator for graphql queries/objects.
