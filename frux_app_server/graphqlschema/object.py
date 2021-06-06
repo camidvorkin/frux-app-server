@@ -47,7 +47,9 @@ class Project(SQLAlchemyObjectType):
         model = ProjectModel
         interfaces = (graphene.relay.Node,)
 
-    def resolve_amount_collected(self):
+    def resolve_amount_collected(self, info):  # pylint: disable=unused-argument
+        if len(self.investors) == 0:
+            return 0
         return functools.reduce(
             lambda a, b: a + b, [i.invested_amount for i in self.investors]
         )
