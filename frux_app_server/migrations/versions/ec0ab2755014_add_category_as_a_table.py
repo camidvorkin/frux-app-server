@@ -26,15 +26,15 @@ def upgrade():
 
     op.bulk_insert(category_table, [
         {
-            'name': 'Arts',
+            'name': 'Art',
             'description': 'Discover the artists and organizations who realize ambitious projects in visual art and performance.'
         },
         {
-            'name': 'Comics & Illustration',
+            'name': 'Books',
             'description': 'Explore fantastical worlds and original characters.'
         },
         {
-            'name': 'Design & Tech',
+            'name': 'Tech',
             'description': 'From fine design to innovative tech, discover projects from creators working to build a more beautiful future.'
         },
         {
@@ -42,8 +42,8 @@ def upgrade():
             'description': 'Join forces with the intrepid filmmakers and festival creators changing the way stories get told on screen.'
         },
         {
-            'name': 'Food & Craft',
-            'description': 'See artisans and entrepreneurs breaking new ground in food, fashion, and crafts.'
+            'name': 'Food',
+            'description': 'See artisans and entrepreneurs breaking new ground in food.'
         },
         {
             'name': 'Games',
@@ -52,10 +52,6 @@ def upgrade():
         {
             'name': 'Music',
             'description': 'Discover new albums, performances, and independent venues who shape the future of sound.'
-        },
-        {
-            'name': 'Publishing',
-            'description': 'Explore writers and publishers who bring new literature, periodicals, podcasts, and more to life.'
         },
         {
             'name': 'Other',
