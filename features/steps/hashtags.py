@@ -69,5 +69,6 @@ def step_impl(context, n, m):
     for hashtag in res['data']['allHashtags']['edges']:
         hashtags.add(hashtag['node']['hashtag'])
         projects.add(hashtag['node']['idProject'])
+
     assert len(hashtags) == int(n)
     assert len(projects) == int(m)

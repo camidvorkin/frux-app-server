@@ -15,22 +15,36 @@ from frux_app_server.models import db
 
 from .constants import Category, Stage, State, categories, stages
 from .object import Admin, Investments, Project, User
-from .utils import is_valid_email, requires_auth
+from .utils import is_valid_email, is_valid_location, requires_auth
 
 
 class UserMutation(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
         name = graphene.String(required=True)
+        image_path = graphene.String(required=True)
+        latitude = graphene.String(required=True)
+        longitude = graphene.String(required=True)
 
     Output = User
 
-    def mutate(self, info, name, email):  # pylint: disable=unused-argument
+    def mutate(
+        self, info, name, email, image_path, latitude, longitude
+    ):  # pylint: disable=unused-argument
 
         if not is_valid_email(email):
             return Promise.reject(GraphQLError('Invalid email address!'))
 
-        user = UserModel(name=name, email=email)
+        if not is_valid_location(latitude, longitude):
+            return Promise.reject(GraphQLError('Invalid location!'))
+
+        user = UserModel(
+            name=name,
+            email=email,
+            image_path=image_path,
+            longitude=longitude,
+            latitude=latitude,
+        )
 
         db.session.add(user)
         try:
@@ -43,20 +57,25 @@ class UserMutation(graphene.Mutation):
 
 class UpdateUser(graphene.Mutation):
     class Arguments:
-        email = graphene.String()
         name = graphene.String()
+        image_path = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
 
     Output = User
 
     @requires_auth
-    def mutate(self, info, name=None, email=None):  # pylint: disable=unused-argument
+    def mutate(
+        self, info, name=None, image_path=None, latitude=None, longitude=None
+    ):  # pylint: disable=unused-argument
         user = info.context.user
         if name:
             user.name = name
-        if email:
-            if not is_valid_email(email):
-                return Promise.reject(GraphQLError('Invalid email address!'))
-            user.email = email
+        if image_path:
+            user.image_path = image_path
+        if latitude and longitude and is_valid_location(latitude, longitude):
+            user.latitude = latitude
+            user.longitude = longitude
         db.session.commit()
         return user
 
@@ -154,14 +173,11 @@ class UpdateProject(graphene.Mutation):
         id_project = graphene.Int(required=True)
         name = graphene.String()
         description = graphene.String()
-        goal = graphene.Int()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
         stage = graphene.String()
         stage_goal = graphene.Int()
         stage_description = graphene.String()
-        latitude = graphene.String()
-        longitude = graphene.String()
 
     Output = Project
 
@@ -172,9 +188,9 @@ class UpdateProject(graphene.Mutation):
         id_project,
         name=None,
         description=None,
-        goal=None,
         hashtags=None,
         category=None,
+        stage=None,
         stage_description=None,
     ):
 
@@ -188,8 +204,6 @@ class UpdateProject(graphene.Mutation):
             project.name = name
         if description:
             project.description = description
-        if goal:
-            project.goal = goal
         if hashtags:
             id_project = project.id
             for h in hashtags:
@@ -202,6 +216,12 @@ class UpdateProject(graphene.Mutation):
                     GraphQLError('Invalid Category! Try with:' + ",".join(categories))
                 )
             project.category = category
+        if stage:
+            if stage not in stages:
+                return Promise.reject(
+                    GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
+                )
+            project.stage = stage
         if stage_description:
             project.stage_description = stage_description
 

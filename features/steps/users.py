@@ -33,14 +33,15 @@ QUERY_SINGLE_USER = '''
     query FindUser($dbId: Int!){
         user(dbId: $dbId) {
             name,
-            email
+            email,
+            imagePath
         }
     }
 '''
 
 MUTATION_NEW_USER = '''
-    mutation NewUser($email: String!, $name: String!) {
-        mutateUser(email: $email, name: $name) {
+    mutation NewUser($email: String!, $name: String!, $imagePath: String!, $latitude: String!, $longitude: String!) {
+        mutateUser(email: $email, name: $name, imagePath: $imagePath, latitude: $latitude, longitude: $longitude) {
             name,
             email,
         }
@@ -48,8 +49,8 @@ MUTATION_NEW_USER = '''
 '''
 
 MUTATION_UPDATE_USER = '''
-    mutation UpdateUser($email: String!, $name: String!) {
-        mutateUpdateUser(name: $name, email: $email) {
+    mutation UpdateUser($name: String!, $imagePath: String!) {
+        mutateUpdateUser(name: $name, imagePath: $imagePath) {
             name,
             email,
             dbId
@@ -57,6 +58,7 @@ MUTATION_UPDATE_USER = '''
     }
 '''
 
+variables = {}
 updated_variables = {}
 
 
@@ -67,7 +69,16 @@ def step_impl(context):
 
 @when('user registers with name "{name}" and mail "{email}"')
 def step_impl(context, name, email):
-    variables = {'email': email, 'name': name}
+    variables['name'] = name
+    variables['email'] = email
+
+
+@when('image "{image_path}" and location "{location}"')
+def step_impl(context, image_path, location):
+    latitude, longitude = location.split(",")
+    variables['imagePath'] = image_path
+    variables['latitude'] = latitude
+    variables['longitude'] = longitude
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_USER, 'variables': json.dumps(variables)},
@@ -93,9 +104,18 @@ def step_impl(context, n):
     assert len(res['data']['allUsers']['edges']) == int(n)
 
 
-@given('user is already registered with name "{name}" and mail "{email}"')
-def step_impl(context, name, email):
-    user = User(name=name, email=email)
+@given(
+    'user is already registered with name "{name}", mail "{email}", image "{image_path}" and location "{location}"'
+)
+def step_impl(context, name, email, image_path, location):
+    latitude, longitude = location.split(",")
+    user = User(
+        name=name,
+        email=email,
+        image_path=image_path,
+        latitude=latitude,
+        longitude=longitude,
+    )
     with context.app.app_context():
         context.db.session.add(user)
         context.db.session.commit()
@@ -103,7 +123,7 @@ def step_impl(context, name, email):
 
 @when(u'user with id {db_id} is listed')
 def step_impl(context, db_id):
-    variables = {'dbId': int(db_id)}
+    variables['dbId'] = int(db_id)
     context.response = context.client.post(
         '/graphql',
         json={'query': QUERY_SINGLE_USER, 'variables': json.dumps(variables)},
@@ -118,11 +138,11 @@ def step_impl(context, name, email):
     assert res['data']['user']['name'] == name
 
 
-@when('user update their username to "{name}" and their mail to "{email}"')
-def step_impl(context, name, email):
+@when('user update their username to "{name}" and their image to "{image_path}"')
+def step_impl(context, name, image_path):
     updated_variables['name'] = name
-    updated_variables['email'] = email
-    authenticate_user(context, email, ADMIN_TOKEN)
+    updated_variables['imagePath'] = image_path
+    authenticate_user(context, image_path, ADMIN_TOKEN)
 
     context.response = context.client.post(
         '/graphql',
@@ -143,4 +163,4 @@ def step_impl(context):
     )
     res = json.loads(context.response.data.decode())
     assert res['data']['user']['name'] == updated_variables['name']
-    assert res['data']['user']['email'] == updated_variables['email']
+    assert res['data']['user']['imagePath'] == updated_variables['imagePath']
