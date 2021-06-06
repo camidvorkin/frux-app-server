@@ -54,20 +54,25 @@ class UserMutation(graphene.Mutation):
 
 class UpdateUser(graphene.Mutation):
     class Arguments:
-        email = graphene.String()
         name = graphene.String()
+        image_path = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
 
     Output = User
 
     @requires_auth
-    def mutate(self, info, name=None, email=None):  # pylint: disable=unused-argument
+    def mutate(
+        self, info, name=None, image_path=None, latitude=None, longitude=None
+    ):  # pylint: disable=unused-argument
         user = info.context.user
         if name:
             user.name = name
-        if email:
-            if not is_valid_email(email):
-                return Promise.reject(GraphQLError('Invalid email address!'))
-            user.email = email
+        if image_path:
+            user.image_path = image_path
+        if latitude and longitude:
+            user.latitude = latitude
+            user.longitude = longitude
         db.session.commit()
         return user
 

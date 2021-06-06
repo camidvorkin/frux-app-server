@@ -33,7 +33,8 @@ QUERY_SINGLE_USER = '''
     query FindUser($dbId: Int!){
         user(dbId: $dbId) {
             name,
-            email
+            email,
+            imagePath
         }
     }
 '''
@@ -48,8 +49,8 @@ MUTATION_NEW_USER = '''
 '''
 
 MUTATION_UPDATE_USER = '''
-    mutation UpdateUser($email: String!, $name: String!) {
-        mutateUpdateUser(name: $name, email: $email) {
+    mutation UpdateUser($name: String!, $imagePath: String!) {
+        mutateUpdateUser(name: $name, imagePath: $imagePath) {
             name,
             email,
             dbId
@@ -137,11 +138,11 @@ def step_impl(context, name, email):
     assert res['data']['user']['name'] == name
 
 
-@when('user update their username to "{name}" and their mail to "{email}"')
-def step_impl(context, name, email):
+@when('user update their username to "{name}" and their image to "{image_path}"')
+def step_impl(context, name, image_path):
     updated_variables['name'] = name
-    updated_variables['email'] = email
-    authenticate_user(context, email, ADMIN_TOKEN)
+    updated_variables['imagePath'] = image_path
+    authenticate_user(context, image_path, ADMIN_TOKEN)
 
     context.response = context.client.post(
         '/graphql',
@@ -162,4 +163,4 @@ def step_impl(context):
     )
     res = json.loads(context.response.data.decode())
     assert res['data']['user']['name'] == updated_variables['name']
-    assert res['data']['user']['email'] == updated_variables['email']
+    assert res['data']['user']['imagePath'] == updated_variables['imagePath']

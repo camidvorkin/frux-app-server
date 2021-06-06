@@ -32,5 +32,5 @@ Feature: users
 
   Scenario: update user information
      Given user is already registered with name "Pepe Suarez", mail "pepe@fi.uba.ar", image "image6" and location "-34.588363,-58.423254"
-      When user update their username to "Pepito" and their mail to "pepito@fi.uba.ar"
+      When user update their username to "Pepito" and their image to "image7"
       Then the user's information change
