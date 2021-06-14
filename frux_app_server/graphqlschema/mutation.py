@@ -22,15 +22,37 @@ from .utils import is_valid_email, is_valid_location, requires_auth
 class UserMutation(graphene.Mutation):
     class Arguments:
         email = graphene.String(required=True)
-        name = graphene.String(required=True)
+        username = graphene.String(required=True)
         image_path = graphene.String(required=True)
+        first_name = graphene.String(required=True)
+        last_name = graphene.String(required=True)
+        description = graphene.String()
+        is_seeder = graphene.Boolean()
+        is_sponsor = graphene.Boolean()
+        is_seer = graphene.Boolean()
+        address = graphene.String()
         latitude = graphene.String(required=True)
         longitude = graphene.String(required=True)
+        phone = graphene.String()
 
     Output = User
 
     def mutate(
-        self, info, name, email, image_path, latitude, longitude
+        self,
+        info,
+        username,
+        email,
+        image_path,
+        first_name,
+        last_name,
+        latitude,
+        longitude,
+        is_seeder=False,
+        is_sponsor=False,
+        is_seer=False,
+        description="",
+        address="",
+        phone="",
     ):  # pylint: disable=unused-argument
 
         if not is_valid_email(email):
@@ -39,12 +61,24 @@ class UserMutation(graphene.Mutation):
         if not is_valid_location(latitude, longitude):
             return Promise.reject(GraphQLError('Invalid location!'))
 
+        date = datetime.datetime.utcnow()
         user = UserModel(
-            name=name,
+            username=username,
             email=email,
             image_path=image_path,
+            first_name=first_name,
+            last_name=last_name,
+            description=description,
+            creation_date_time=date,
+            last_login=date,
+            is_seeder=is_seeder,
+            is_sponsor=is_sponsor,
+            is_seer=is_seer,
+            address=address,
             longitude=longitude,
             latitude=latitude,
+            phone=phone,
+            is_blocked=False,
         )
 
         db.session.add(user)
@@ -58,25 +92,62 @@ class UserMutation(graphene.Mutation):
 
 class UpdateUser(graphene.Mutation):
     class Arguments:
-        name = graphene.String()
+        username = graphene.String()
         image_path = graphene.String()
+        first_name = graphene.String()
+        last_name = graphene.String()
+        description = graphene.String()
+        is_seeder = graphene.Boolean()
+        is_sponsor = graphene.Boolean()
+        is_seer = graphene.Boolean()
+        address = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
+        phone = graphene.String()
 
     Output = User
 
     @requires_auth
     def mutate(
-        self, info, name=None, image_path=None, latitude=None, longitude=None
+        self,
+        info,
+        username=None,
+        image_path=None,
+        first_name=None,
+        last_name=None,
+        description=None,
+        is_seeder=None,
+        is_sponsor=None,
+        is_seer=None,
+        address=None,
+        latitude=None,
+        longitude=None,
+        phone=None,
     ):  # pylint: disable=unused-argument
         user = info.context.user
-        if name:
-            user.name = name
+        if username:
+            user.username = username
         if image_path:
             user.image_path = image_path
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if description:
+            user.description = description
+        if is_seeder:
+            user.is_seeder = is_seeder
+        if is_sponsor:
+            user.is_sponsor = is_sponsor
+        if is_seer:
+            user.is_seeder = is_seer
+        if address:
+            user.address = address
         if latitude and longitude and is_valid_location(latitude, longitude):
             user.latitude = latitude
             user.longitude = longitude
+        if phone:
+            user.phone = phone
         db.session.commit()
         return user
 

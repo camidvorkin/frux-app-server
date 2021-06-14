@@ -20,11 +20,22 @@ class User(db.Model):  # type:ignore
     __tablename__ = 'user'
     __table_args__ = (db.UniqueConstraint('email', name='unique_user_email'),)
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    username = db.Column(db.String)
     email = db.Column(db.String)
     image_path = db.Column(db.String)
+    first_name = db.Column(db.String)
+    last_name = db.Column(db.String)
+    description = db.Column(db.String)
+    creation_date_time = db.Column(db.DateTime)
+    last_login = db.Column(db.DateTime)
+    is_seeder = db.Column(db.Boolean)
+    is_sponsor = db.Column(db.Boolean)
+    is_seer = db.Column(db.Boolean)
+    address = db.Column(db.String)
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
+    phone = db.Column(db.String)
+    is_blocked = db.Column(db.Boolean)
     project_investments = db.relationship("Investments", back_populates="user")
 
 
