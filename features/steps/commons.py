@@ -12,7 +12,6 @@ ADMIN_TOKEN = 'AdminTestAuthToken'
 @then('operation is rejected with the message "{message}"')
 def step_impl(context, message):
     res = json.loads(context.response.data.decode())
-    print(res['errors'][0]['message'], message)
     assert res['errors'][0]['message'] == message
 
 
