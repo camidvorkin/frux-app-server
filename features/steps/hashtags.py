@@ -11,8 +11,7 @@ QUERY_ALL_HASHTAGS = '''
     allHashtags {
         edges {
             node {
-                hashtag,
-                idProject
+                hashtag
             }
         }
     }
@@ -59,16 +58,3 @@ def step_impl(context, n):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert len(res['data']['allHashtags']['edges']) == int(n)
-
-
-@then('get {n} hashtags and {m} projects')
-def step_impl(context, n, m):
-    assert context.response.status_code == 200
-    res = json.loads(context.response.data.decode())
-    hashtags, projects = set(), set()
-    for hashtag in res['data']['allHashtags']['edges']:
-        hashtags.add(hashtag['node']['hashtag'])
-        projects.add(hashtag['node']['idProject'])
-
-    assert len(hashtags) == int(n)
-    assert len(projects) == int(m)

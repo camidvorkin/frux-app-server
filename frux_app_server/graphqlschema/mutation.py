@@ -162,10 +162,14 @@ class ProjectMutation(graphene.Mutation):
         db.session.add(project)
         db.session.commit()
 
-        id_project = project.id
         for h in hashtags:
-            hashtag_model = HashtagModel(hashtag=h, id_project=id_project)
-            db.session.add(hashtag_model)
+            if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
+                hashtag = HashtagModel(hashtag=h)
+                db.session.add(hashtag)
+                db.session.commit()
+            else:
+                hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
+            project.hashtags.append(hashtag)
             db.session.commit()
 
         return project
