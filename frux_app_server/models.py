@@ -66,7 +66,7 @@ class Project(db.Model):  # type:ignore
     current_state = db.Column(db.Enum(State))
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    owner = db.relationship(User, backref='creator')
+    owner = db.relationship(User, backref='created_projects')
     category_name = db.Column(
         db.String, db.ForeignKey('category.name'), default='Other'
     )
