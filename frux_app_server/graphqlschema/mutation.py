@@ -27,8 +27,6 @@ class UserMutation(graphene.Mutation):
         first_name = graphene.String(required=True)
         last_name = graphene.String(required=True)
         description = graphene.String()
-        is_seeder = graphene.Boolean()
-        is_sponsor = graphene.Boolean()
         is_seer = graphene.Boolean()
         address = graphene.String()
         latitude = graphene.String(required=True)
@@ -47,8 +45,6 @@ class UserMutation(graphene.Mutation):
         last_name,
         latitude,
         longitude,
-        is_seeder=False,
-        is_sponsor=False,
         is_seer=False,
         description="",
         address="",
@@ -71,8 +67,6 @@ class UserMutation(graphene.Mutation):
             description=description,
             creation_date_time=date,
             last_login=date,
-            is_seeder=is_seeder,
-            is_sponsor=is_sponsor,
             is_seer=is_seer,
             address=address,
             longitude=longitude,
@@ -97,8 +91,6 @@ class UpdateUser(graphene.Mutation):
         first_name = graphene.String()
         last_name = graphene.String()
         description = graphene.String()
-        is_seeder = graphene.Boolean()
-        is_sponsor = graphene.Boolean()
         is_seer = graphene.Boolean()
         address = graphene.String()
         latitude = graphene.String()
@@ -116,8 +108,6 @@ class UpdateUser(graphene.Mutation):
         first_name=None,
         last_name=None,
         description=None,
-        is_seeder=None,
-        is_sponsor=None,
         is_seer=None,
         address=None,
         latitude=None,
@@ -135,10 +125,6 @@ class UpdateUser(graphene.Mutation):
             user.last_name = last_name
         if description:
             user.description = description
-        if is_seeder:
-            user.is_seeder = is_seeder
-        if is_sponsor:
-            user.is_sponsor = is_sponsor
         if is_seer:
             user.is_seeder = is_seer
         if address:

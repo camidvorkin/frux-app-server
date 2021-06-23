@@ -17,11 +17,22 @@ from .filters import FruxFilterableConnectionField
 class User(SQLAlchemyObjectType):
     db_id = graphene.Int(source='id')
 
+    is_seeder = graphene.Boolean()
+    is_sponsor = graphene.Boolean()
+
     class Meta:
         description = 'Registered users'
         model = UserModel
         interfaces = (graphene.relay.Node,)
         connection_field_factory = FruxFilterableConnectionField.factory
+
+    # User is seeder if has projects
+    def resolve_is_seeder(self, info):  # pylint: disable=unused-argument
+        return len(self.creator) != 0
+
+    # User is sponsor if has investments
+    def resolve_is_sponsor(self, info):  # pylint: disable=unused-argument
+        return len(self.project_investments)
 
 
 class UserConnections(graphene.Connection):

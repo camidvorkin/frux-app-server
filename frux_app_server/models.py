@@ -28,8 +28,6 @@ class User(db.Model):  # type:ignore
     description = db.Column(db.String)
     creation_date_time = db.Column(db.DateTime)
     last_login = db.Column(db.DateTime)
-    is_seeder = db.Column(db.Boolean)
-    is_sponsor = db.Column(db.Boolean)
     is_seer = db.Column(db.Boolean)
     address = db.Column(db.String)
     latitude = db.Column(db.String)
