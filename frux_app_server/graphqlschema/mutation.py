@@ -125,7 +125,7 @@ class UpdateUser(graphene.Mutation):
             user.last_name = last_name
         if description:
             user.description = description
-        if is_seer:
+        if is_seer is not None:
             user.is_seeder = is_seer
         if address:
             user.address = address
