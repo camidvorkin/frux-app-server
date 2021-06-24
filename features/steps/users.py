@@ -32,26 +32,30 @@ QUERY_PROFILE = '''
 QUERY_SINGLE_USER = '''
     query FindUser($dbId: Int!){
         user(dbId: $dbId) {
-            name,
+            username,
             email,
-            imagePath
+            imagePath,
+            description,
+            isSeeder,
+            isSponsor,
+            isSeer
         }
     }
 '''
 
 MUTATION_NEW_USER = '''
-    mutation NewUser($email: String!, $name: String!, $imagePath: String!, $latitude: String!, $longitude: String!) {
-        mutateUser(email: $email, name: $name, imagePath: $imagePath, latitude: $latitude, longitude: $longitude) {
-            name,
+    mutation NewUser($email: String!, $username: String!, $firstName: String!, $lastName: String!, $imagePath: String!, $latitude: String!, $longitude: String!) {
+        mutateUser(email: $email, username: $username, firstName: $firstName, lastName: $lastName, imagePath: $imagePath, latitude: $latitude, longitude: $longitude) {
+            username,
             email,
         }
     }
 '''
 
 MUTATION_UPDATE_USER = '''
-    mutation UpdateUser($name: String!, $imagePath: String!) {
-        mutateUpdateUser(name: $name, imagePath: $imagePath) {
-            name,
+    mutation UpdateUser($username: String!, $imagePath: String!) {
+        mutateUpdateUser(username: $username, imagePath: $imagePath) {
+            username,
             email,
             dbId
         }
@@ -67,29 +71,34 @@ def step_impl(context):
     pass
 
 
-@when('user registers with name "{name}" and mail "{email}"')
-def step_impl(context, name, email):
-    variables['name'] = name
+@when(
+    'user registers with username "{username}", name "{name}", lastname "{lastname}" and mail "{email}"'
+)
+def step_impl(context, username, name, lastname, email):
+    variables['username'] = username
+    variables['firstName'] = name
+    variables['lastName'] = lastname
     variables['email'] = email
 
 
-@when('image "{image_path}" and location "{location}"')
-def step_impl(context, image_path, location):
+@when('image "{image_path}" with location "{location}" and address "{address}"')
+def step_impl(context, image_path, location, address):
     latitude, longitude = location.split(",")
     variables['imagePath'] = image_path
     variables['latitude'] = latitude
     variables['longitude'] = longitude
+    variables['address'] = address
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_USER, 'variables': json.dumps(variables)},
     )
 
 
-@then('user already registered with name "{name}" and mail "{email}"')
-def step_impl(context, name, email):
+@then('user already registered with username "{username}" and mail "{email}"')
+def step_impl(context, username, email):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
-    assert res == {"data": {"mutateUser": {"name": name, "email": email}}}
+    assert res == {"data": {"mutateUser": {"username": username, "email": email}}}
 
 
 @when('users are listed')
@@ -104,17 +113,16 @@ def step_impl(context, n):
     assert len(res['data']['allUsers']['edges']) == int(n)
 
 
-@given(
-    'user is already registered with name "{name}", mail "{email}", image "{image_path}" and location "{location}"'
-)
-def step_impl(context, name, email, image_path, location):
-    latitude, longitude = location.split(",")
+@given('user is already registered with mail "{email}"')
+def step_impl(context, email):
     user = User(
-        name=name,
+        username="DefaultUserName",
+        first_name="DefaultName",
+        last_name="DefaultLastName",
         email=email,
-        image_path=image_path,
-        latitude=latitude,
-        longitude=longitude,
+        image_path="DefaultImage",
+        latitude="00.0000",
+        longitude="00.0000",
     )
     with context.app.app_context():
         context.db.session.add(user)
@@ -130,17 +138,16 @@ def step_impl(context, db_id):
     )
 
 
-@then(u'get user with name "{name}" and mail "{email}"')
-def step_impl(context, name, email):
+@then(u'get user with mail "{email}"')
+def step_impl(context, email):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert res['data']['user']['email'] == email
-    assert res['data']['user']['name'] == name
 
 
-@when('user update their username to "{name}" and their image to "{image_path}"')
-def step_impl(context, name, image_path):
-    updated_variables['name'] = name
+@when('user update their username to "{username}" and their image to "{image_path}"')
+def step_impl(context, username, image_path):
+    updated_variables['username'] = username
     updated_variables['imagePath'] = image_path
     authenticate_user(context, image_path, ADMIN_TOKEN)
 
@@ -162,5 +169,18 @@ def step_impl(context):
         json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 2})},
     )
     res = json.loads(context.response.data.decode())
-    assert res['data']['user']['name'] == updated_variables['name']
+    assert res['data']['user']['username'] == updated_variables['username']
     assert res['data']['user']['imagePath'] == updated_variables['imagePath']
+
+
+@then(u'user already registered with description "" and no role')
+def step_impl(context):
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 1})},
+    )
+    res = json.loads(context.response.data.decode())
+    assert res['data']['user']['description'] == ""
+    assert not res['data']['user']['isSeeder']
+    assert not res['data']['user']['isSponsor']
+    assert not res['data']['user']['isSeer']
