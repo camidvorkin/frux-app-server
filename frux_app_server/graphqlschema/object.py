@@ -17,16 +17,32 @@ from .filters import FruxFilterableConnectionField
 class User(SQLAlchemyObjectType):
     db_id = graphene.Int(source='id')
 
+    is_seeder = graphene.Boolean()
+    is_sponsor = graphene.Boolean()
+
     class Meta:
         description = 'Registered users'
         model = UserModel
         interfaces = (graphene.relay.Node,)
         connection_field_factory = FruxFilterableConnectionField.factory
 
+    # User is seeder if has projects
+    def resolve_is_seeder(self, info):  # pylint: disable=unused-argument
+        return len(self.created_projects) != 0
+
+    # User is sponsor if has investments
+    def resolve_is_sponsor(self, info):  # pylint: disable=unused-argument
+        return len(self.project_investments)
+
 
 class UserConnections(graphene.Connection):
     class Meta:
         node = User
+
+    total_count = graphene.Int()
+
+    def resolve_total_count(self, info):  # pylint: disable=unused-argument
+        return self.iterable.count()
 
 
 class ProjectStage(SQLAlchemyObjectType):
@@ -41,6 +57,7 @@ class ProjectStage(SQLAlchemyObjectType):
 class Project(SQLAlchemyObjectType):
     db_id = graphene.Int(source='id')
     amount_collected = graphene.Int()
+    investor_count = graphene.Int()
 
     class Meta:
         description = 'Registered projects'
@@ -54,10 +71,18 @@ class Project(SQLAlchemyObjectType):
             lambda a, b: a + b, [i.invested_amount for i in self.investors]
         )
 
+    def resolve_investor_count(self, info):  # pylint: disable=unused-argument
+        return len(self.investors)
+
 
 class ProjectConnections(graphene.Connection):
     class Meta:
         node = Project
+
+    total_count = graphene.Int()
+
+    def resolve_total_count(self, info):  # pylint: disable=unused-argument
+        return self.iterable.count()
 
 
 class Hashtag(SQLAlchemyObjectType):

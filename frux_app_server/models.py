@@ -20,11 +20,20 @@ class User(db.Model):  # type:ignore
     __tablename__ = 'user'
     __table_args__ = (db.UniqueConstraint('email', name='unique_user_email'),)
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String)
+    username = db.Column(db.String)
     email = db.Column(db.String)
     image_path = db.Column(db.String)
+    first_name = db.Column(db.String)
+    last_name = db.Column(db.String)
+    description = db.Column(db.String)
+    creation_date_time = db.Column(db.DateTime)
+    last_login = db.Column(db.DateTime)
+    is_seer = db.Column(db.Boolean)
+    address = db.Column(db.String)
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
+    phone = db.Column(db.String)
+    is_blocked = db.Column(db.Boolean)
     project_investments = db.relationship("Investments", back_populates="user")
 
 
@@ -64,7 +73,7 @@ class Project(db.Model):  # type:ignore
     current_state = db.Column(db.Enum(State))
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    owner = db.relationship(User, backref='creator')
+    owner = db.relationship(User, backref='created_projects')
     category_name = db.Column(
         db.String, db.ForeignKey('category.name'), default='Other'
     )
