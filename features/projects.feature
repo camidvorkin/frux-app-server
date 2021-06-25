@@ -7,10 +7,9 @@ Feature: projects
       When user create a project "Environment Project"
       And is about "Plant a tree"
       And the category is "Arts"
-      And the stage is "COMPLETE"
       And hashtags "#planet,#green"
       And the total amount to be collected is 5000
-      Then the project "Environment Project", description "Plant a tree", category "Arts", stage "COMPLETE" and goal 5000 is created correctly
+      Then the project "Environment Project", description "Plant a tree", category "Arts", state "CREATED" and goal 5000 is created correctly
 
   Scenario: a project with no category is set as "Other"
      Given a new project
@@ -18,12 +17,11 @@ Feature: projects
       And default categories are in the database
       When user create a project "Tech Project"
       And is about "Computer engineering"
-      And the stage is "IN_PROGRESS"
       And hashtags "#python"
       And the total amount to be collected is 5000
-      Then the project "Tech Project", description "Computer engineering", category "Other", stage "IN_PROGRESS" and goal 5000 is created correctly
+      Then the project "Tech Project", description "Computer engineering", category "Other", state "CREATED" and goal 5000 is created correctly
 
-  Scenario: a project with no stage it just started
+  Scenario: a project with no state it just started
      Given a new project
       And user with mail "johndoe@gmail.com" is authenticated
       And default categories are in the database
@@ -32,7 +30,7 @@ Feature: projects
       And the category is "Music"
       And hashtags "#guitar,#rock,#music"
       And the total amount to be collected is 2000
-      Then the project "Music Project", description "Create a short clip", category "Music", stage "IN_PROGRESS" and goal 2000 is created correctly
+      Then the project "Music Project", description "Create a short clip", category "Music", state "CREATED" and goal 2000 is created correctly
 
   Scenario: list projects
      Given user with mail "johndoe@gmail.com" is authenticated

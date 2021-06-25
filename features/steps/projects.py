@@ -33,15 +33,13 @@ QUERY_ALL_PROJECT_FILTERS = '''
 '''
 
 MUTATION_NEW_PROJECT = '''
-    mutation NewProject($description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $stage: String) {
-        mutateProject(name: $name, description: $description, goal: $goal, category: $category, stage: $stage, hashtags: $hashtags) {
+    mutation NewProject($description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String]) {
+        mutateProject(name: $name, description: $description, goal: $goal, category: $category, hashtags: $hashtags) {
             name,
             description,
             goal,
             categoryName,
-            stage {
-                stage
-            }
+            currentState
         }
     }
 '''
@@ -119,7 +117,7 @@ def step_impl(context, goal):
 @given('an old project')
 def step_impl(context):
     variables['name'] = "Old project"
-    variables['stage'] = "IN_PROGRESS"
+    variables['stage'] = "CREATED"
     variables['goal'] = 1
     variables['hashtags'] = []
     variables['description'] = "Old project"
@@ -140,9 +138,9 @@ def step_impl(context):
 
 
 @then(
-    'the project "{name}", description "{description}", category "{category}", stage "{stage}" and goal {goal} is created correctly'
+    'the project "{name}", description "{description}", category "{category}", state "{state}" and goal {goal} is created correctly'
 )
-def step_impl(context, name, description, goal, category, stage):
+def step_impl(context, name, description, goal, category, state):
     res = json.loads(context.response.data.decode())
     assert res == {
         "data": {
@@ -151,7 +149,7 @@ def step_impl(context, name, description, goal, category, stage):
                 "description": str(description),
                 "goal": int(goal),
                 "categoryName": str(category),
-                "stage": {"stage": str(stage)},
+                "currentState": str(state),
             }
         }
     }

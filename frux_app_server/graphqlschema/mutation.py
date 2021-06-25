@@ -11,11 +11,10 @@ from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
-from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
-from .constants import Stage, State, stages
+from .constants import State, states
 from .object import Admin, Favorites, Investments, Project, User
 from .utils import is_valid_email, is_valid_location, requires_auth
 
@@ -176,9 +175,6 @@ class ProjectMutation(graphene.Mutation):
         goal = graphene.Int(required=True)
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
-        stage = graphene.String()
-        stage_goal = graphene.Int()
-        stage_description = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
 
@@ -193,11 +189,9 @@ class ProjectMutation(graphene.Mutation):
         goal,
         hashtags=None,
         category=None,
-        stage=(Stage.IN_PROGRESS.value),
-        stage_goal=0,
-        stage_description="",
         latitude="0.0",
         longitude="0.0",
+        current_state=(State.CREATED.value),
     ):
         if not hashtags:
             hashtags = []
@@ -208,22 +202,16 @@ class ProjectMutation(graphene.Mutation):
         ):
             return Promise.reject(GraphQLError('Invalid Category!'))
 
-        if stage not in stages:
+        if current_state not in states:
             return Promise.reject(
-                GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
+                GraphQLError('Invalid Stage! Try with:' + ",".join(states))
             )
-
-        project_stage = ProjectStageModel(
-            stage=stage, goal=stage_goal, description=stage_description
-        )
-        db.session.add(project_stage)
 
         project = ProjectModel(
             name=name,
             description=description,
             goal=goal,
             owner=info.context.user,
-            stage=project_stage,
             category_name=category,
             latitude=latitude,
             longitude=longitude,
@@ -252,9 +240,6 @@ class UpdateProject(graphene.Mutation):
         description = graphene.String()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
-        stage = graphene.String()
-        stage_goal = graphene.Int()
-        stage_description = graphene.String()
 
     Output = Project
 
@@ -267,8 +252,6 @@ class UpdateProject(graphene.Mutation):
         description=None,
         hashtags=None,
         category=None,
-        stage=None,
-        stage_description=None,
     ):
 
         project = ProjectModel.query.get(id_project)
@@ -291,14 +274,6 @@ class UpdateProject(graphene.Mutation):
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
                 return Promise.reject(GraphQLError('Invalid Category!'))
             project.category = category
-        if stage:
-            if stage not in stages:
-                return Promise.reject(
-                    GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
-                )
-            project.stage = stage
-        if stage_description:
-            project.stage_description = stage_description
 
         db.session.commit()
         return project

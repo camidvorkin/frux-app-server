@@ -1,7 +1,7 @@
 """SQLAlchemy models."""
 from flask_sqlalchemy import SQLAlchemy
 
-from .graphqlschema.constants import Stage, State
+from .graphqlschema.constants import State
 
 db = SQLAlchemy()
 
@@ -72,7 +72,7 @@ class Hashtag(db.Model):  # type:ignore
 class ProjectStage(db.Model):  # type:ignore
     __tablename__ = 'project_stage'
     id = db.Column(db.Integer, primary_key=True)
-    stage = db.Column(db.Enum(Stage))
+    title = db.Column(db.String)
     description = db.Column(db.String)
     goal = db.Column(db.Float)
 
