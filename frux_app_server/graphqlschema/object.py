@@ -5,6 +5,7 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import Category as CategoryModel
+from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
@@ -19,6 +20,7 @@ class User(SQLAlchemyObjectType):
 
     is_seeder = graphene.Boolean()
     is_sponsor = graphene.Boolean()
+    favorite_count = graphene.Int()
 
     class Meta:
         description = 'Registered users'
@@ -33,6 +35,9 @@ class User(SQLAlchemyObjectType):
     # User is sponsor if has investments
     def resolve_is_sponsor(self, info):  # pylint: disable=unused-argument
         return len(self.project_investments)
+
+    def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
+        return len(self.favorited_projects)
 
 
 class UserConnections(graphene.Connection):
@@ -58,6 +63,7 @@ class Project(SQLAlchemyObjectType):
     db_id = graphene.Int(source='id')
     amount_collected = graphene.Int()
     investor_count = graphene.Int()
+    favorite_count = graphene.Int()
 
     class Meta:
         description = 'Registered projects'
@@ -73,6 +79,9 @@ class Project(SQLAlchemyObjectType):
 
     def resolve_investor_count(self, info):  # pylint: disable=unused-argument
         return len(self.investors)
+
+    def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
+        return len(self.favorites_from)
 
 
 class ProjectConnections(graphene.Connection):
@@ -105,6 +114,13 @@ class Investments(SQLAlchemyObjectType):
     class Meta:
         description = 'Information of a project backed by a user'
         model = InvestmentsModel
+        interfaces = (graphene.relay.Node,)
+
+
+class Favorites(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Favorites from user to project'
+        model = FavoritesModel
         interfaces = (graphene.relay.Node,)
 
 
