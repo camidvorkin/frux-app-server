@@ -32,6 +32,7 @@ class UserMutation(graphene.Mutation):
         latitude = graphene.String(required=True)
         longitude = graphene.String(required=True)
         phone = graphene.String()
+        interests = graphene.List(graphene.String)
 
     Output = User
 
@@ -49,13 +50,16 @@ class UserMutation(graphene.Mutation):
         description="",
         address="",
         phone="",
+        interests=None,
     ):  # pylint: disable=unused-argument
-
         if not is_valid_email(email):
             return Promise.reject(GraphQLError('Invalid email address!'))
 
         if not is_valid_location(latitude, longitude):
             return Promise.reject(GraphQLError('Invalid location!'))
+
+        if not interests:
+            interests = []
 
         date = datetime.datetime.utcnow()
         user = UserModel(
@@ -74,12 +78,20 @@ class UserMutation(graphene.Mutation):
             phone=phone,
             is_blocked=False,
         )
-
         db.session.add(user)
         try:
             db.session.commit()
         except sqlalchemy.exc.IntegrityError:
             return Promise.reject(GraphQLError('Email address already registered!'))
+
+        for category in interests:
+            if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
+                return Promise.reject(GraphQLError('Invalid Category!'))
+            interest_category = (
+                db.session.query(CategoryModel).filter_by(name=category).one()
+            )
+            user.interests.append(interest_category)
+            db.session.commit()
 
         return user
 

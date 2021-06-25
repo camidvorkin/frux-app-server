@@ -16,6 +16,14 @@ class Investments(db.Model):  # type:ignore
     user = db.relationship("User", back_populates="project_investments")
 
 
+category_association = db.Table(
+    'category_association',
+    db.Model.metadata,
+    db.Column('user', db.Integer, db.ForeignKey('user.id')),
+    db.Column('category', db.String, db.ForeignKey('category.name')),
+)
+
+
 class User(db.Model):  # type:ignore
     __tablename__ = 'user'
     __table_args__ = (db.UniqueConstraint('email', name='unique_user_email'),)
@@ -35,6 +43,7 @@ class User(db.Model):  # type:ignore
     phone = db.Column(db.String)
     is_blocked = db.Column(db.Boolean)
     project_investments = db.relationship("Investments", back_populates="user")
+    interests = db.relationship("Category", secondary=category_association)
 
 
 hashtag_association = db.Table(
