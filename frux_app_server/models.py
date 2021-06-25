@@ -37,11 +37,18 @@ class User(db.Model):  # type:ignore
     project_investments = db.relationship("Investments", back_populates="user")
 
 
+hashtag_association = db.Table(
+    'hashtag_association',
+    db.Model.metadata,
+    db.Column('hashtag', db.String, db.ForeignKey('hashtag.hashtag')),
+    db.Column('project_id', db.Integer, db.ForeignKey('project.id')),
+)
+
+
 class Hashtag(db.Model):  # type:ignore
     __tablename__ = 'hashtag'
-    id = db.Column(db.Integer, primary_key=True)
-    hashtag = db.Column(db.String)
-    id_project = db.Column(db.Integer, db.ForeignKey('project.id'))
+    __table_args__ = (db.UniqueConstraint('hashtag', name='unique_hashtag'),)
+    hashtag = db.Column(db.String, primary_key=True)
 
 
 class ProjectStage(db.Model):  # type:ignore
@@ -76,6 +83,7 @@ class Project(db.Model):  # type:ignore
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
     investors = db.relationship("Investments", back_populates="project")
+    hashtags = db.relationship("Hashtag", secondary=hashtag_association)
 
 
 class Admin(db.Model):  # type:ignore

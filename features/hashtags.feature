@@ -11,4 +11,4 @@ Feature: hashtags
      And a new project was created by the user with hashtags "green,world"
      And a new project was created by the user with hashtags "green,now"
      When hashtags and projects are counted
-     Then get 3 hashtags and 2 projects
+     Then get a list of 3 hashtags
