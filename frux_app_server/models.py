@@ -6,6 +6,14 @@ from .graphqlschema.constants import Stage, State
 db = SQLAlchemy()
 
 
+class Favorites(db.Model):  # type:ignore
+    __tablename__ = 'favorites'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    project = db.relationship("Project", back_populates="favorites_from")
+    user = db.relationship("User", back_populates="favorited_projects")
+
+
 class Investments(db.Model):  # type:ignore
     __tablename__ = 'investments'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
@@ -44,6 +52,7 @@ class User(db.Model):  # type:ignore
     is_blocked = db.Column(db.Boolean)
     project_investments = db.relationship("Investments", back_populates="user")
     interests = db.relationship("Category", secondary=category_association)
+    favorited_projects = db.relationship("Favorites", back_populates="user")
 
 
 hashtag_association = db.Table(
@@ -93,6 +102,7 @@ class Project(db.Model):  # type:ignore
     longitude = db.Column(db.String)
     investors = db.relationship("Investments", back_populates="project")
     hashtags = db.relationship("Hashtag", secondary=hashtag_association)
+    favorites_from = db.relationship("Favorites", back_populates="project")
 
 
 class Admin(db.Model):  # type:ignore
