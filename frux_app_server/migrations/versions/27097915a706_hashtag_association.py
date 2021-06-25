@@ -1,7 +1,7 @@
 """Hashtag Association
 
 Revision ID: 27097915a706
-Revises: ec0ab2755014
+Revises: 7c2ec82f8a53
 Create Date: 2021-06-22 16:58:01.767904
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '27097915a706'
-down_revision = 'ec0ab2755014'
+down_revision = '7c2ec82f8a53'
 branch_labels = None
 depends_on = None
 
@@ -29,21 +29,6 @@ def upgrade():
         batch_op.create_unique_constraint('unique_hashtag', ['hashtag'])
         batch_op.drop_constraint('hashtag_id_project_fkey', type_='foreignkey')
         batch_op.drop_column('id_project')
-
-    with op.batch_alter_table('user', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('name', sa.String(), nullable=True))
-        batch_op.drop_column('phone')
-        batch_op.drop_column('creation_date_time')
-        batch_op.drop_column('is_sponsor')
-        batch_op.drop_column('username')
-        batch_op.drop_column('address')
-        batch_op.drop_column('is_seeder')
-        batch_op.drop_column('is_blocked')
-        batch_op.drop_column('first_name')
-        batch_op.drop_column('last_login')
-        batch_op.drop_column('last_name')
-        batch_op.drop_column('is_seer')
-        batch_op.drop_column('description')
 
     # ### end Alembic commands ###
 
