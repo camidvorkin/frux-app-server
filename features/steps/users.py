@@ -36,16 +36,14 @@ QUERY_SINGLE_USER = '''
             email,
             imagePath,
             description,
-            isSeeder,
-            isSponsor,
             isSeer
         }
     }
 '''
 
 MUTATION_NEW_USER = '''
-    mutation NewUser($email: String!, $username: String!, $firstName: String!, $lastName: String!, $imagePath: String!, $latitude: String!, $longitude: String!) {
-        mutateUser(email: $email, username: $username, firstName: $firstName, lastName: $lastName, imagePath: $imagePath, latitude: $latitude, longitude: $longitude) {
+    mutation NewUser($email: String!, $username: String!, $firstName: String!, $lastName: String!, $imagePath: String!, $latitude: String!, $longitude: String!, $interests: [String!]!) {
+        mutateUser(email: $email, username: $username, firstName: $firstName, lastName: $lastName, imagePath: $imagePath, latitude: $latitude, longitude: $longitude, interests: $interests) {
             username,
             email,
         }
@@ -88,10 +86,16 @@ def step_impl(context, image_path, location, address):
     variables['latitude'] = latitude
     variables['longitude'] = longitude
     variables['address'] = address
+    variables['interests'] = variables.get('interests', [])
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_USER, 'variables': json.dumps(variables)},
     )
+
+
+@when('interests "{interests}"')
+def step_impl(context, interests):
+    variables['interests'] = interests.split(',')
 
 
 @then('user already registered with username "{username}" and mail "{email}"')
@@ -181,6 +185,11 @@ def step_impl(context):
     )
     res = json.loads(context.response.data.decode())
     assert res['data']['user']['description'] == ""
-    assert not res['data']['user']['isSeeder']
-    assert not res['data']['user']['isSponsor']
     assert not res['data']['user']['isSeer']
+
+
+@then(u'registration is successful')
+def step_impl(context):
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    assert res['data']['mutateUser']['email'] == variables['email']

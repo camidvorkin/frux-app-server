@@ -40,3 +40,24 @@ Feature: users
       When user registers with username "pepito", name "Pepe", lastname "Suarez" and mail "pepe@fi.uba.ar"
       And image "image1" with location "-34.588363,-58.423254" and address "Urquiza"
       Then user already registered with description "" and no role
+
+   Scenario: a new user tries to register with invalid location
+     Given user is not registered
+      When user registers with username "pepito", name "Pepe", lastname "Suarez" and mail "pepe@fi.uba.ar"
+      And image "image1" with location "-3400.588363,-528.423254" and address "Urquiza"
+      Then operation is rejected with the message "Invalid location!"
+
+   Scenario: a new user registers with defined interests
+     Given user is not registered
+      And default categories are in the database
+      When user registers with username "pepito", name "Pepe", lastname "Suarez" and mail "pepe@fi.uba.ar"
+      And interests "Games,Film"
+      And image "image1" with location "-34.588363,-58.423254" and address "Urquiza"
+      Then registration is successful
+
+   Scenario: a new user registers with an invalid interest
+     Given user is not registered
+      When user registers with username "pepito", name "Pepe", lastname "Suarez" and mail "pepe@fi.uba.ar"
+      And interests "Opera"
+      And image "image1" with location "-34.588363,-58.423254" and address "Urquiza"
+      Then operation is rejected with the message "Invalid Category!"
