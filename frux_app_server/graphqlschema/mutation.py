@@ -79,11 +79,6 @@ class UserMutation(graphene.Mutation):
             phone=phone,
             is_blocked=False,
         )
-        db.session.add(user)
-        try:
-            db.session.commit()
-        except sqlalchemy.exc.IntegrityError:
-            return Promise.reject(GraphQLError('Email address already registered!'))
 
         for category in interests:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
@@ -92,7 +87,12 @@ class UserMutation(graphene.Mutation):
                 db.session.query(CategoryModel).filter_by(name=category).one()
             )
             user.interests.append(interest_category)
+
+        db.session.add(user)
+        try:
             db.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            return Promise.reject(GraphQLError('Email address already registered!'))
 
         return user
 
