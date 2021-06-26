@@ -49,10 +49,11 @@ Feature: users
 
    Scenario: a new user registers with defined interests
      Given user is not registered
+      And default categories are in the database
       When user registers with username "pepito", name "Pepe", lastname "Suarez" and mail "pepe@fi.uba.ar"
-      And interests "Art,Film"
+      And interests "Games,Film"
       And image "image1" with location "-34.588363,-58.423254" and address "Urquiza"
-      Then operation is rejected with the message "Invalid location!"
+      Then registration is successful
 
    Scenario: a new user registers with an invalid interest
      Given user is not registered

@@ -36,8 +36,6 @@ QUERY_SINGLE_USER = '''
             email,
             imagePath,
             description,
-            isSeeder,
-            isSponsor,
             isSeer
         }
     }
@@ -187,6 +185,11 @@ def step_impl(context):
     )
     res = json.loads(context.response.data.decode())
     assert res['data']['user']['description'] == ""
-    assert not res['data']['user']['isSeeder']
-    assert not res['data']['user']['isSponsor']
     assert not res['data']['user']['isSeer']
+
+
+@then(u'registration is successful')
+def step_impl(context):
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    assert res['data']['mutateUser']['email'] == variables['email']
