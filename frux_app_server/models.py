@@ -72,6 +72,8 @@ class Hashtag(db.Model):  # type:ignore
 class ProjectStage(db.Model):  # type:ignore
     __tablename__ = 'project_stage'
     id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    project = db.relationship('Project', back_populates="stages")
     title = db.Column(db.String)
     description = db.Column(db.String)
     goal = db.Column(db.Float)
@@ -96,8 +98,7 @@ class Project(db.Model):  # type:ignore
         db.String, db.ForeignKey('category.name'), default='Other'
     )
     category = db.relationship(Category, backref='projects')
-    project_stage_id = db.Column(db.Integer, db.ForeignKey('project_stage.id'))
-    stage = db.relationship(ProjectStage, backref='pstage')
+    stages = db.relationship(ProjectStage, back_populates="project")
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
     investors = db.relationship("Investments", back_populates="project")

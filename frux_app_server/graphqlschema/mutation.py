@@ -11,11 +11,12 @@ from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
+from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
 from .constants import State, states
-from .object import Admin, Favorites, Investments, Project, User
+from .object import Admin, Favorites, Investments, Project, ProjectStage, User
 from .utils import is_valid_email, is_valid_location, requires_auth
 
 
@@ -337,6 +338,32 @@ class UnFavProject(graphene.Mutation):
         return FavoritesModel(user_id=info.context.user.id, project_id=id_project,)
 
 
+class ProjectStageMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        title = graphene.String(required=True)
+        description = graphene.String(required=True)
+        goal = graphene.Float(required=True)
+
+    Output = ProjectStage
+
+    @requires_auth
+    def mutate(
+        self, info, id_project, title, description, goal
+    ):  # pylint: disable=unused-argument
+
+        stage = ProjectStageModel(
+            title=title, project_id=id_project, description=description, goal=goal,
+        )
+
+        project = ProjectModel.query.get(id_project)
+        project.stages.append(stage)
+
+        db.session.add(stage)
+        db.session.commit()
+        return stage
+
+
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
@@ -346,3 +373,4 @@ class Mutation(graphene.ObjectType):
     mutate_invest_project = InvestProject.Field()
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
+    mutate_project_stage = ProjectStageMutation.Field()
