@@ -15,8 +15,8 @@ from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
-from .constants import Stage, State, stages
-from .object import Admin, Favorites, Investments, Project, User
+from .constants import State, states
+from .object import Admin, Favorites, Investments, Project, ProjectStage, User
 from .utils import is_valid_email, is_valid_location, requires_auth
 
 
@@ -79,11 +79,6 @@ class UserMutation(graphene.Mutation):
             phone=phone,
             is_blocked=False,
         )
-        db.session.add(user)
-        try:
-            db.session.commit()
-        except sqlalchemy.exc.IntegrityError:
-            return Promise.reject(GraphQLError('Email address already registered!'))
 
         for category in interests:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
@@ -92,7 +87,12 @@ class UserMutation(graphene.Mutation):
                 db.session.query(CategoryModel).filter_by(name=category).one()
             )
             user.interests.append(interest_category)
+
+        db.session.add(user)
+        try:
             db.session.commit()
+        except sqlalchemy.exc.IntegrityError:
+            return Promise.reject(GraphQLError('Email address already registered!'))
 
         return user
 
@@ -176,9 +176,6 @@ class ProjectMutation(graphene.Mutation):
         goal = graphene.Int(required=True)
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
-        stage = graphene.String()
-        stage_goal = graphene.Int()
-        stage_description = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
 
@@ -193,11 +190,9 @@ class ProjectMutation(graphene.Mutation):
         goal,
         hashtags=None,
         category=None,
-        stage=(Stage.IN_PROGRESS.value),
-        stage_goal=0,
-        stage_description="",
         latitude="0.0",
         longitude="0.0",
+        current_state=(State.CREATED.value),
     ):
         if not hashtags:
             hashtags = []
@@ -208,40 +203,32 @@ class ProjectMutation(graphene.Mutation):
         ):
             return Promise.reject(GraphQLError('Invalid Category!'))
 
-        if stage not in stages:
+        if current_state not in states:
             return Promise.reject(
-                GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
+                GraphQLError('Invalid Stage! Try with:' + ",".join(states))
             )
-
-        project_stage = ProjectStageModel(
-            stage=stage, goal=stage_goal, description=stage_description
-        )
-        db.session.add(project_stage)
 
         project = ProjectModel(
             name=name,
             description=description,
             goal=goal,
             owner=info.context.user,
-            stage=project_stage,
             category_name=category,
             latitude=latitude,
             longitude=longitude,
             current_state=State.CREATED,
         )
         db.session.add(project)
-        db.session.commit()
 
         for h in hashtags:
             if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
                 hashtag = HashtagModel(hashtag=h)
                 db.session.add(hashtag)
-                db.session.commit()
             else:
                 hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
             project.hashtags.append(hashtag)
-            db.session.commit()
 
+        db.session.commit()
         return project
 
 
@@ -252,9 +239,6 @@ class UpdateProject(graphene.Mutation):
         description = graphene.String()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
-        stage = graphene.String()
-        stage_goal = graphene.Int()
-        stage_description = graphene.String()
 
     Output = Project
 
@@ -267,8 +251,6 @@ class UpdateProject(graphene.Mutation):
         description=None,
         hashtags=None,
         category=None,
-        stage=None,
-        stage_description=None,
     ):
 
         project = ProjectModel.query.get(id_project)
@@ -281,24 +263,21 @@ class UpdateProject(graphene.Mutation):
             project.name = name
         if description:
             project.description = description
+
         if hashtags:
-            id_project = project.id
+            project.hashtags = []
             for h in hashtags:
-                hashtag_model = HashtagModel(hashtag=h, id_project=id_project)
-                db.session.add(hashtag_model)
-                db.session.commit()
+                if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
+                    hashtag = HashtagModel(hashtag=h)
+                    db.session.add(hashtag)
+                else:
+                    hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
+                project.hashtags.append(hashtag)
+
         if category:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
                 return Promise.reject(GraphQLError('Invalid Category!'))
             project.category = category
-        if stage:
-            if stage not in stages:
-                return Promise.reject(
-                    GraphQLError('Invalid Stage! Try with:' + ",".join(stages))
-                )
-            project.stage = stage
-        if stage_description:
-            project.stage_description = stage_description
 
         db.session.commit()
         return project
@@ -362,6 +341,32 @@ class UnFavProject(graphene.Mutation):
         return FavoritesModel(user_id=info.context.user.id, project_id=id_project,)
 
 
+class ProjectStageMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        title = graphene.String(required=True)
+        description = graphene.String(required=True)
+        goal = graphene.Float(required=True)
+
+    Output = ProjectStage
+
+    @requires_auth
+    def mutate(
+        self, info, id_project, title, description, goal
+    ):  # pylint: disable=unused-argument
+
+        stage = ProjectStageModel(
+            title=title, project_id=id_project, description=description, goal=goal,
+        )
+
+        project = ProjectModel.query.get(id_project)
+        project.stages.append(stage)
+
+        db.session.add(stage)
+        db.session.commit()
+        return stage
+
+
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
@@ -371,3 +376,4 @@ class Mutation(graphene.ObjectType):
     mutate_invest_project = InvestProject.Field()
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
+    mutate_project_stage = ProjectStageMutation.Field()
