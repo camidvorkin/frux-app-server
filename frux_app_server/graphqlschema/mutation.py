@@ -1,6 +1,8 @@
 import datetime
+import json
 
 import graphene
+import requests
 import sqlalchemy
 from graphql import GraphQLError
 from promise import Promise
@@ -13,10 +15,11 @@ from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
+from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
 
 from .constants import State, states
-from .object import Admin, Favorites, Investments, Project, ProjectStage, User
+from .object import Admin, Favorites, Investments, Project, ProjectStage, User, Wallet
 from .utils import is_valid_email, is_valid_location, requires_auth
 
 
@@ -367,6 +370,31 @@ class ProjectStageMutation(graphene.Mutation):
         return stage
 
 
+class EnableWallet(graphene.Mutation):
+    Output = Wallet
+
+    @requires_auth
+    def mutate(self, info):  # pylint: disable=unused-argument
+
+        if info.context.user.wallet_address is not None:
+            return WalletModel.query.get(info.context.user.wallet_address)
+
+        r = requests.post("http://127.0.0.1:3000/wallet")
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to request wallet! {r.status_code}')
+            )
+
+        response_json = json.loads(r.content.decode())
+        wallet = WalletModel(id=response_json["id"], address=response_json["address"])
+
+        db.session.add(wallet)
+        info.context.user.wallet_address = wallet.address
+
+        db.session.commit()
+        return wallet
+
+
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
@@ -377,3 +405,4 @@ class Mutation(graphene.ObjectType):
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
+    mutate_enable_wallet = EnableWallet.Field()

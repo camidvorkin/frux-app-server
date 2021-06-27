@@ -53,6 +53,8 @@ class User(db.Model):  # type:ignore
     project_investments = db.relationship("Investments", back_populates="user")
     interests = db.relationship("Category", secondary=category_association)
     favorited_projects = db.relationship("Favorites", back_populates="user")
+    wallet_address = db.Column(db.String, db.ForeignKey('wallet.address'))
+    wallet = db.relationship("Wallet", back_populates="user")
 
 
 hashtag_association = db.Table(
@@ -111,3 +113,10 @@ class Admin(db.Model):  # type:ignore
     token = db.Column(db.String, primary_key=True)
     email = db.Column(db.String)
     user_id = db.Column(db.String)
+
+
+class Wallet(db.Model):  # type:ignore
+    __tablename__ = 'wallet'
+    address = db.Column(db.String, primary_key=True)
+    id = db.Column(db.Integer)
+    user = db.relationship('User', back_populates="wallet")
