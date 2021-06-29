@@ -109,6 +109,7 @@ class UpdateUser(graphene.Mutation):
         latitude = graphene.String()
         longitude = graphene.String()
         phone = graphene.String()
+        interests = graphene.List(graphene.String)
 
     Output = User
 
@@ -126,6 +127,7 @@ class UpdateUser(graphene.Mutation):
         latitude=None,
         longitude=None,
         phone=None,
+        interests=None,
     ):  # pylint: disable=unused-argument
         user = info.context.user
         if username:
@@ -147,6 +149,14 @@ class UpdateUser(graphene.Mutation):
             user.longitude = longitude
         if phone:
             user.phone = phone
+        if interests:
+            user.interests = []
+            for c in interests:
+                if db.session.query(CategoryModel).filter_by(name=c).count() != 1:
+                    return Promise.reject(GraphQLError('Invalid Category!'))
+                else:
+                    category = db.session.query(CategoryModel).filter_by(name=c).one()
+                user.interests.append(category)
         db.session.commit()
         return user
 
