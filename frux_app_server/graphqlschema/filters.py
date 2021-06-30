@@ -22,6 +22,7 @@ class ProjectFilter(FilterSet):
             'name': [...],
             'description': [...],
             'category_name': [...],
+            'current_state': [...],
         }
 
 

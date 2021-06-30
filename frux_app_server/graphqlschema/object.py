@@ -11,6 +11,8 @@ from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
+from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
+
 
 from .filters import FruxFilterableConnectionField
 
@@ -82,6 +84,14 @@ class Project(SQLAlchemyObjectType):
 
     def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
         return len(self.favorites_from)
+
+    # def filter_per_hashtag(self, info, hashtag):  # pylint: disable=unused-argument
+    #     query = dbsession.query(AssociationHashtagModel).filter(MyTable.name==u'john')
+    #     rows = query.statement.execute().fetchall()
+    #     for row in rows:
+    #         print row
+
+    
 
 
 class ProjectConnections(graphene.Connection):
