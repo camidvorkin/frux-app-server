@@ -6,6 +6,9 @@ from graphql import GraphQLError
 from promise import Promise
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import (
+    AssociationHashtag as AssociationHashtagModel,  # pylint: disable=unused-import
+)
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
@@ -16,7 +19,15 @@ from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
 from .constants import State, states
-from .object import Admin, Favorites, Investments, Project, ProjectStage, User
+from .object import (
+    Admin,
+    AssociationHashtag,
+    Favorites,
+    Investments,
+    Project,
+    ProjectStage,
+    User,
+)
 from .utils import is_valid_email, is_valid_location, requires_auth
 
 
@@ -234,9 +245,9 @@ class ProjectMutation(graphene.Mutation):
             if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
                 hashtag = HashtagModel(hashtag=h)
                 db.session.add(hashtag)
-            else:
-                hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
-            project.hashtags.append(hashtag)
+
+            association = AssociationHashtagModel(hashtag=h, project_id=project.id)
+            db.session.add(association)
 
         db.session.commit()
         return project
@@ -275,14 +286,16 @@ class UpdateProject(graphene.Mutation):
             project.description = description
 
         if hashtags:
-            project.hashtags = []
+            db.session.query(AssociationHashtagModel).filter_by(
+                project_id=id_project
+            ).delete()
             for h in hashtags:
                 if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
                     hashtag = HashtagModel(hashtag=h)
                     db.session.add(hashtag)
-                else:
-                    hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
-                project.hashtags.append(hashtag)
+
+                association = AssociationHashtagModel(hashtag=h, project_id=project.id)
+                db.session.add(association)
 
         if category:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:

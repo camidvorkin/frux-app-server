@@ -54,11 +54,12 @@ class User(db.Model):  # type:ignore
     interests = db.relationship("Category", secondary=category_association)
     favorited_projects = db.relationship("Favorites", back_populates="user")
 
+
 class AssociationHashtag(db.Model):  # type:ignore
     __tablename__ = 'association_hashtag'
     hashtag = db.Column(db.String, db.ForeignKey('hashtag.hashtag'), primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
-    project = db.relationship("Project")
+    hashtag_names = db.relationship("Hashtag")
 
 
 class Hashtag(db.Model):  # type:ignore

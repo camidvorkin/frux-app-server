@@ -4,6 +4,7 @@ import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
@@ -11,8 +12,6 @@ from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
-from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
-
 
 from .filters import FruxFilterableConnectionField
 
@@ -85,14 +84,6 @@ class Project(SQLAlchemyObjectType):
     def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
         return len(self.favorites_from)
 
-    # def filter_per_hashtag(self, info, hashtag):  # pylint: disable=unused-argument
-    #     query = dbsession.query(AssociationHashtagModel).filter(MyTable.name==u'john')
-    #     rows = query.statement.execute().fetchall()
-    #     for row in rows:
-    #         print row
-
-    
-
 
 class ProjectConnections(graphene.Connection):
     class Meta:
@@ -138,4 +129,11 @@ class Category(SQLAlchemyObjectType):
     class Meta:
         description = 'Information of the category for projects in the system'
         model = CategoryModel
+        interfaces = (graphene.relay.Node,)
+
+
+class AssociationHashtag(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Associates each hashtag from each project'
+        model = AssociationHashtagModel
         interfaces = (graphene.relay.Node,)
