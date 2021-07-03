@@ -260,6 +260,8 @@ class UpdateProject(graphene.Mutation):
         description = graphene.String()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
 
     Output = Project
 
@@ -272,6 +274,8 @@ class UpdateProject(graphene.Mutation):
         description=None,
         hashtags=None,
         category=None,
+        latitude=None,
+        longitude=None,
     ):
 
         project = ProjectModel.query.get(id_project)
@@ -285,7 +289,7 @@ class UpdateProject(graphene.Mutation):
         if description:
             project.description = description
 
-        if hashtags:
+        if hashtags is not None:
             db.session.query(AssociationHashtagModel).filter_by(
                 project_id=id_project
             ).delete()
@@ -297,10 +301,14 @@ class UpdateProject(graphene.Mutation):
                 association = AssociationHashtagModel(hashtag=h, project_id=project.id)
                 db.session.add(association)
 
-        if category:
+        if category is not None:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
                 return Promise.reject(GraphQLError('Invalid Category!'))
             project.category = category
+
+        if latitude and longitude:
+            project.latitude = latitude
+            project.longitude = longitude
 
         db.session.commit()
         return project
