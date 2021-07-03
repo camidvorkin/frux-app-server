@@ -133,8 +133,6 @@ class Category(SQLAlchemyObjectType):
 
 
 class Wallet(SQLAlchemyObjectType):
-    db_id = graphene.Int(source='id')
-
     class Meta:
         description = 'A wallet given to a user'
         model = WalletModel

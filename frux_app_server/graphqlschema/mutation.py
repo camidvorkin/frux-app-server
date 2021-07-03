@@ -379,14 +379,22 @@ class EnableWallet(graphene.Mutation):
         if info.context.user.wallet_address is not None:
             return WalletModel.query.get(info.context.user.wallet_address)
 
-        r = requests.post("http://127.0.0.1:3000/wallet")
+        try:
+            r = requests.post("http://127.0.0.1:3000/wallet")
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request wallet! Payments service is down!')
+            )
+
         if r.status_code != 200:
             return Promise.reject(
                 GraphQLError(f'Unable to request wallet! {r.status_code}')
             )
 
         response_json = json.loads(r.content.decode())
-        wallet = WalletModel(id=response_json["id"], address=response_json["address"])
+        wallet = WalletModel(
+            internal_id=response_json["id"], address=response_json["address"]
+        )
 
         db.session.add(wallet)
         info.context.user.wallet_address = wallet.address

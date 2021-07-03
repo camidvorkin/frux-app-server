@@ -118,5 +118,5 @@ class Admin(db.Model):  # type:ignore
 class Wallet(db.Model):  # type:ignore
     __tablename__ = 'wallet'
     address = db.Column(db.String, primary_key=True)
-    id = db.Column(db.Integer)
+    internal_id = db.Column(db.String)
     user = db.relationship('User', back_populates="wallet")
