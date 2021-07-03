@@ -8,8 +8,10 @@ class UserFilter(FilterSet):
     class Meta:
         model = UserModel
         fields = {
-            'name': ['eq', 'ne', 'in', 'ilike'],
-            'email': ['eq', 'ne', 'in', 'ilike'],
+            'username': [...],
+            'email': [...],
+            'is_seer': [...],
+            'is_blocked': [...],
         }
 
 
@@ -17,9 +19,9 @@ class ProjectFilter(FilterSet):
     class Meta:
         model = ProjectModel
         fields = {
-            'name': ['eq', 'ne', 'in', 'ilike'],
-            'description': ['eq', 'ne', 'in', 'ilike'],
-            'category_name': ['eq', 'ne', 'in', 'ilike'],
+            'name': [...],
+            'description': [...],
+            'category_name': [...],
         }
 
 
