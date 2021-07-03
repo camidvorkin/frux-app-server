@@ -199,6 +199,7 @@ class ProjectMutation(graphene.Mutation):
         category = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
+        uri_image = graphene.String()
 
     Output = Project
 
@@ -214,6 +215,7 @@ class ProjectMutation(graphene.Mutation):
         latitude="0.0",
         longitude="0.0",
         current_state=(State.CREATED.value),
+        uri_image="",
     ):
         if not hashtags:
             hashtags = []
@@ -238,6 +240,7 @@ class ProjectMutation(graphene.Mutation):
             latitude=latitude,
             longitude=longitude,
             current_state=State.CREATED,
+            uri_image=uri_image,
         )
         db.session.add(project)
 
@@ -262,6 +265,7 @@ class UpdateProject(graphene.Mutation):
         category = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
+        uri_image = graphene.String()
 
     Output = Project
 
@@ -276,6 +280,7 @@ class UpdateProject(graphene.Mutation):
         category=None,
         latitude=None,
         longitude=None,
+        uri_image=None,
     ):
 
         project = ProjectModel.query.get(id_project)
@@ -309,6 +314,8 @@ class UpdateProject(graphene.Mutation):
         if latitude and longitude:
             project.latitude = latitude
             project.longitude = longitude
+        if uri_image:
+            project.uri_image = uri_image
 
         db.session.commit()
         return project

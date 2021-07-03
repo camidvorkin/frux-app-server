@@ -103,6 +103,7 @@ class Project(db.Model):  # type:ignore
     investors = db.relationship("Investments", back_populates="project")
     hashtags = db.relationship("AssociationHashtag")
     favorites_from = db.relationship("Favorites", back_populates="project")
+    uri_image = db.Column(db.String)
 
 
 class Admin(db.Model):  # type:ignore
