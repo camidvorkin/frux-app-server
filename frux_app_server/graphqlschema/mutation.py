@@ -6,6 +6,9 @@ from graphql import GraphQLError
 from promise import Promise
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import (
+    AssociationHashtag as AssociationHashtagModel,  # pylint: disable=unused-import
+)
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
@@ -16,7 +19,15 @@ from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 
 from .constants import State, states
-from .object import Admin, Favorites, Investments, Project, ProjectStage, User
+from .object import (
+    Admin,
+    AssociationHashtag,
+    Favorites,
+    Investments,
+    Project,
+    ProjectStage,
+    User,
+)
 from .utils import is_valid_email, is_valid_location, requires_auth
 
 
@@ -149,7 +160,7 @@ class UpdateUser(graphene.Mutation):
             user.longitude = longitude
         if phone:
             user.phone = phone
-        if interests:
+        if interests is not None:
             user.interests = []
             for c in interests:
                 if db.session.query(CategoryModel).filter_by(name=c).count() != 1:
@@ -188,6 +199,7 @@ class ProjectMutation(graphene.Mutation):
         category = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
+        uri_image = graphene.String()
 
     Output = Project
 
@@ -203,6 +215,7 @@ class ProjectMutation(graphene.Mutation):
         latitude="0.0",
         longitude="0.0",
         current_state=(State.CREATED.value),
+        uri_image="",
     ):
         if not hashtags:
             hashtags = []
@@ -227,6 +240,7 @@ class ProjectMutation(graphene.Mutation):
             latitude=latitude,
             longitude=longitude,
             current_state=State.CREATED,
+            uri_image=uri_image,
         )
         db.session.add(project)
 
@@ -234,9 +248,9 @@ class ProjectMutation(graphene.Mutation):
             if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
                 hashtag = HashtagModel(hashtag=h)
                 db.session.add(hashtag)
-            else:
-                hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
-            project.hashtags.append(hashtag)
+
+            association = AssociationHashtagModel(hashtag=h, project_id=project.id)
+            db.session.add(association)
 
         db.session.commit()
         return project
@@ -249,6 +263,9 @@ class UpdateProject(graphene.Mutation):
         description = graphene.String()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
+        uri_image = graphene.String()
 
     Output = Project
 
@@ -261,6 +278,9 @@ class UpdateProject(graphene.Mutation):
         description=None,
         hashtags=None,
         category=None,
+        latitude=None,
+        longitude=None,
+        uri_image=None,
     ):
 
         project = ProjectModel.query.get(id_project)
@@ -274,20 +294,28 @@ class UpdateProject(graphene.Mutation):
         if description:
             project.description = description
 
-        if hashtags:
-            project.hashtags = []
+        if hashtags is not None:
+            db.session.query(AssociationHashtagModel).filter_by(
+                project_id=id_project
+            ).delete()
             for h in hashtags:
                 if db.session.query(HashtagModel).filter_by(hashtag=h).count() != 1:
                     hashtag = HashtagModel(hashtag=h)
                     db.session.add(hashtag)
-                else:
-                    hashtag = db.session.query(HashtagModel).filter_by(hashtag=h).one()
-                project.hashtags.append(hashtag)
 
-        if category:
+                association = AssociationHashtagModel(hashtag=h, project_id=project.id)
+                db.session.add(association)
+
+        if category is not None:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
                 return Promise.reject(GraphQLError('Invalid Category!'))
             project.category = category
+
+        if latitude and longitude and is_valid_location(latitude, longitude):
+            project.latitude = latitude
+            project.longitude = longitude
+        if uri_image:
+            project.uri_image = uri_image
 
         db.session.commit()
         return project

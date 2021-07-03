@@ -4,6 +4,7 @@ import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
@@ -128,4 +129,11 @@ class Category(SQLAlchemyObjectType):
     class Meta:
         description = 'Information of the category for projects in the system'
         model = CategoryModel
+        interfaces = (graphene.relay.Node,)
+
+
+class AssociationHashtag(SQLAlchemyObjectType):
+    class Meta:
+        description = 'Associates each hashtag from each project'
+        model = AssociationHashtagModel
         interfaces = (graphene.relay.Node,)

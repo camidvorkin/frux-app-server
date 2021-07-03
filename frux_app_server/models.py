@@ -55,12 +55,11 @@ class User(db.Model):  # type:ignore
     favorited_projects = db.relationship("Favorites", back_populates="user")
 
 
-hashtag_association = db.Table(
-    'hashtag_association',
-    db.Model.metadata,
-    db.Column('hashtag', db.String, db.ForeignKey('hashtag.hashtag')),
-    db.Column('project_id', db.Integer, db.ForeignKey('project.id')),
-)
+class AssociationHashtag(db.Model):  # type:ignore
+    __tablename__ = 'association_hashtag'
+    hashtag = db.Column(db.String, db.ForeignKey('hashtag.hashtag'), primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    hashtag_names = db.relationship("Hashtag")
 
 
 class Hashtag(db.Model):  # type:ignore
@@ -102,8 +101,9 @@ class Project(db.Model):  # type:ignore
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
     investors = db.relationship("Investments", back_populates="project")
-    hashtags = db.relationship("Hashtag", secondary=hashtag_association)
+    hashtags = db.relationship("AssociationHashtag")
     favorites_from = db.relationship("Favorites", back_populates="project")
+    uri_image = db.Column(db.String)
 
 
 class Admin(db.Model):  # type:ignore
