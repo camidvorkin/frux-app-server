@@ -160,7 +160,7 @@ class UpdateUser(graphene.Mutation):
             user.longitude = longitude
         if phone:
             user.phone = phone
-        if interests:
+        if interests is not None:
             user.interests = []
             for c in interests:
                 if db.session.query(CategoryModel).filter_by(name=c).count() != 1:
@@ -311,7 +311,7 @@ class UpdateProject(graphene.Mutation):
                 return Promise.reject(GraphQLError('Invalid Category!'))
             project.category = category
 
-        if latitude and longitude:
+        if latitude and longitude and is_valid_location(latitude, longitude):
             project.latitude = latitude
             project.longitude = longitude
         if uri_image:
