@@ -39,7 +39,6 @@ class UserMutation(graphene.Mutation):
         first_name = graphene.String(required=True)
         last_name = graphene.String(required=True)
         description = graphene.String()
-        is_seer = graphene.Boolean()
         address = graphene.String()
         latitude = graphene.String(required=True)
         longitude = graphene.String(required=True)
@@ -58,7 +57,6 @@ class UserMutation(graphene.Mutation):
         last_name,
         latitude,
         longitude,
-        is_seer=False,
         description="",
         address="",
         phone="",
@@ -83,11 +81,11 @@ class UserMutation(graphene.Mutation):
             description=description,
             creation_date_time=date,
             last_login=date,
-            is_seer=is_seer,
             address=address,
             longitude=longitude,
             latitude=latitude,
             phone=phone,
+            is_seer=False,
             is_blocked=False,
         )
 
@@ -115,7 +113,6 @@ class UpdateUser(graphene.Mutation):
         first_name = graphene.String()
         last_name = graphene.String()
         description = graphene.String()
-        is_seer = graphene.Boolean()
         address = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
@@ -133,7 +130,6 @@ class UpdateUser(graphene.Mutation):
         first_name=None,
         last_name=None,
         description=None,
-        is_seer=None,
         address=None,
         latitude=None,
         longitude=None,
@@ -151,8 +147,6 @@ class UpdateUser(graphene.Mutation):
             user.last_name = last_name
         if description:
             user.description = description
-        if is_seer is not None:
-            user.is_seeder = is_seer
         if address:
             user.address = address
         if latitude and longitude and is_valid_location(latitude, longitude):
@@ -168,6 +162,43 @@ class UpdateUser(graphene.Mutation):
                 else:
                     category = db.session.query(CategoryModel).filter_by(name=c).one()
                 user.interests.append(category)
+        db.session.commit()
+        return user
+
+
+class SetSeerMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+        user = info.context.user
+        project = ProjectModel.query.get(id_project)
+
+        user.is_seer = True
+        if project.has_seer:
+            return Promise.reject(GraphQLError('Project has a seer already!'))
+        user.seer_projects.append(project)
+        project.has_seer = True
+        db.session.commit()
+        return project
+
+
+class BlockedUserMutation(graphene.Mutation):
+
+    Output = User
+
+    @requires_auth
+    def mutate(
+        self, info,
+    ):  # pylint: disable=unused-argument
+
+        user = info.context.user
+        user.is_blocked = True
         db.session.commit()
         return user
 
@@ -241,6 +272,7 @@ class ProjectMutation(graphene.Mutation):
             longitude=longitude,
             current_state=State.CREATED,
             uri_image=uri_image,
+            has_seer=False,
         )
         db.session.add(project)
 
@@ -410,6 +442,8 @@ class Mutation(graphene.ObjectType):
     mutate_project = ProjectMutation.Field()
     mutate_admin = AdminMutation.Field()
     mutate_update_user = UpdateUser.Field()
+    mutate_set_veer = SetSeerMutation.Field()
+    mutate_set_to_blocked = BlockedUserMutation.Field()
     mutate_update_project = UpdateProject.Field()
     mutate_invest_project = InvestProject.Field()
     mutate_fav_project = FavProject.Field()
