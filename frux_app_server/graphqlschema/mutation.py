@@ -167,25 +167,16 @@ class UpdateUser(graphene.Mutation):
 
 
 class SetSeerMutation(graphene.Mutation):
-    class Arguments:
-        id_project = graphene.Int(required=True)
-
-    Output = Project
+    Output = User
 
     @requires_auth
     def mutate(
-        self, info, id_project,
+        self, info,
     ):  # pylint: disable=unused-argument
         user = info.context.user
-        project = ProjectModel.query.get(id_project)
-
         user.is_seer = True
-        if project.has_seer:
-            return Promise.reject(GraphQLError('Project has a seer already!'))
-        user.seer_projects.append(project)
-        project.has_seer = True
         db.session.commit()
-        return project
+        return user
 
 
 class BlockedUserMutation(graphene.Mutation):
@@ -201,6 +192,32 @@ class BlockedUserMutation(graphene.Mutation):
         user.is_blocked = True
         db.session.commit()
         return user
+
+
+class SeerProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+        user = info.context.user
+        if not user.is_seer:
+            return Promise.reject(
+                GraphQLError('This user does not have seer privilages!')
+            )
+
+        project = ProjectModel.query.get(id_project)
+        if project.has_seer:
+            return Promise.reject(GraphQLError('Project has a seer already!'))
+
+        user.seer_projects.append(project)
+        project.has_seer = True
+        db.session.commit()
+        return project
 
 
 class AdminMutation(graphene.Mutation):
@@ -446,6 +463,7 @@ class Mutation(graphene.ObjectType):
     mutate_set_to_blocked = BlockedUserMutation.Field()
     mutate_update_project = UpdateProject.Field()
     mutate_invest_project = InvestProject.Field()
+    mutate_seer_project = SeerProjectMutation.Field()
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
