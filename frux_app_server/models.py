@@ -45,6 +45,9 @@ class User(db.Model):  # type:ignore
     creation_date_time = db.Column(db.DateTime)
     last_login = db.Column(db.DateTime)
     is_seer = db.Column(db.Boolean)
+    seer_projects = db.relationship(
+        "Project", back_populates="seer", primaryjoin="User.id==Project.seer_id"
+    )
     address = db.Column(db.String)
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
@@ -92,7 +95,7 @@ class Project(db.Model):  # type:ignore
     current_state = db.Column(db.Enum(State))
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    owner = db.relationship(User, backref='created_projects')
+    owner = db.relationship(User, backref='created_projects', foreign_keys=[user_id])
     category_name = db.Column(
         db.String, db.ForeignKey('category.name'), default='Other'
     )
@@ -104,6 +107,9 @@ class Project(db.Model):  # type:ignore
     hashtags = db.relationship("AssociationHashtag")
     favorites_from = db.relationship("Favorites", back_populates="project")
     uri_image = db.Column(db.String)
+    has_seer = db.Column(db.Boolean)
+    seer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    seer = db.relationship("User", foreign_keys=[seer_id])
 
 
 class Admin(db.Model):  # type:ignore
