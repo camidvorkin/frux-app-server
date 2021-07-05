@@ -474,7 +474,7 @@ class Mutation(graphene.ObjectType):
     mutate_project = ProjectMutation.Field()
     mutate_admin = AdminMutation.Field()
     mutate_update_user = UpdateUser.Field()
-    mutate_set_veer = SetSeerMutation.Field()
+    mutate_set_seer = SetSeerMutation.Field()
     mutate_set_to_blocked = BlockedUserMutation.Field()
     mutate_update_project = UpdateProject.Field()
     mutate_invest_project = InvestProject.Field()
