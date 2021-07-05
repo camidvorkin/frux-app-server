@@ -194,6 +194,21 @@ class BlockedUserMutation(graphene.Mutation):
         return user
 
 
+class UnblockedUserMutation(graphene.Mutation):
+
+    Output = User
+
+    @requires_auth
+    def mutate(
+        self, info,
+    ):  # pylint: disable=unused-argument
+
+        user = info.context.user
+        user.is_blocked = False
+        db.session.commit()
+        return user
+
+
 class SeerProjectMutation(graphene.Mutation):
     class Arguments:
         id_project = graphene.Int(required=True)
