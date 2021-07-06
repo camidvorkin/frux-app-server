@@ -1,7 +1,7 @@
 """Add Seer to project
 
 Revision ID: 00dace2d42c6
-Revises: aceed6d7db69
+Revises: e6be07ed5a99
 Create Date: 2021-07-05 18:26:32.150137
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '00dace2d42c6'
-down_revision = 'aceed6d7db69'
+down_revision = 'e6be07ed5a99'
 branch_labels = None
 depends_on = None
 
