@@ -45,6 +45,9 @@ class User(db.Model):  # type:ignore
     creation_date_time = db.Column(db.DateTime)
     last_login = db.Column(db.DateTime)
     is_seer = db.Column(db.Boolean)
+    seer_projects = db.relationship(
+        "Project", back_populates="seer", primaryjoin="User.id==Project.seer_id"
+    )
     address = db.Column(db.String)
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
@@ -57,12 +60,11 @@ class User(db.Model):  # type:ignore
     wallet = db.relationship("Wallet", back_populates="user")
 
 
-hashtag_association = db.Table(
-    'hashtag_association',
-    db.Model.metadata,
-    db.Column('hashtag', db.String, db.ForeignKey('hashtag.hashtag')),
-    db.Column('project_id', db.Integer, db.ForeignKey('project.id')),
-)
+class AssociationHashtag(db.Model):  # type:ignore
+    __tablename__ = 'association_hashtag'
+    hashtag = db.Column(db.String, db.ForeignKey('hashtag.hashtag'), primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), primary_key=True)
+    hashtag_names = db.relationship("Hashtag")
 
 
 class Hashtag(db.Model):  # type:ignore
@@ -95,7 +97,7 @@ class Project(db.Model):  # type:ignore
     current_state = db.Column(db.Enum(State))
     goal = db.Column(db.Float)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    owner = db.relationship(User, backref='created_projects')
+    owner = db.relationship(User, backref='created_projects', foreign_keys=[user_id])
     category_name = db.Column(
         db.String, db.ForeignKey('category.name'), default='Other'
     )
@@ -104,8 +106,12 @@ class Project(db.Model):  # type:ignore
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
     investors = db.relationship("Investments", back_populates="project")
-    hashtags = db.relationship("Hashtag", secondary=hashtag_association)
+    hashtags = db.relationship("AssociationHashtag")
     favorites_from = db.relationship("Favorites", back_populates="project")
+    uri_image = db.Column(db.String)
+    has_seer = db.Column(db.Boolean)
+    seer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    seer = db.relationship("User", foreign_keys=[seer_id])
 
 
 class Admin(db.Model):  # type:ignore

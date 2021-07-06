@@ -1,7 +1,7 @@
 """Add wallet to user
 
 Revision ID: e591bdcc4de6
-Revises: 0621a5877cd7
+Revises: a4cfac563430
 Create Date: 2021-06-26 20:43:53.509947
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'e591bdcc4de6'
-down_revision = '0621a5877cd7'
+down_revision = 'a4cfac563430'
 branch_labels = None
 depends_on = None
 
