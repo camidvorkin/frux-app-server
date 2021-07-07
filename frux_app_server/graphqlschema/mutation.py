@@ -185,31 +185,37 @@ class SetSeerMutation(graphene.Mutation):
         return user
 
 
-class BlockedUserMutation(graphene.Mutation):
+class BlockUserMutation(graphene.Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
 
     Output = User
 
     @requires_auth
-    def mutate(
-        self, info,
-    ):  # pylint: disable=unused-argument
+    def mutate(self, info, user_id):  # pylint: disable=unused-argument
 
-        user = info.context.user
+        query = db.session.query(UserModel).filter_by(id=user_id)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No user found!'))
+        user = query.first()
         user.is_blocked = True
         db.session.commit()
         return user
 
 
-class UnblockedUserMutation(graphene.Mutation):
+class UnBlockUserMutation(graphene.Mutation):
+    class Arguments:
+        user_id = graphene.Int(required=True)
 
     Output = User
 
     @requires_auth
-    def mutate(
-        self, info,
-    ):  # pylint: disable=unused-argument
+    def mutate(self, info, user_id):  # pylint: disable=unused-argument
 
-        user = info.context.user
+        query = db.session.query(UserModel).filter_by(id=user_id)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No user found!'))
+        user = query.first()
         user.is_blocked = False
         db.session.commit()
         return user
@@ -357,6 +363,7 @@ class ProjectMutation(graphene.Mutation):
             current_state=State.CREATED,
             uri_image=uri_image,
             has_seer=False,
+            is_blocked=False,
         )
         db.session.add(project)
 
@@ -515,6 +522,48 @@ class InvestProject(graphene.Mutation):
         return invest
 
 
+class BlockProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
+
+        project.is_blocked = True
+        db.session.commit()
+        return project
+
+
+class UnBlockProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
+
+        project.is_blocked = False
+        db.session.commit()
+        return project
+
+
 class WithdrawFundsMutation(graphene.Mutation):
     class Arguments:
         id_project = graphene.Int(required=True)
@@ -655,10 +704,13 @@ class Mutation(graphene.ObjectType):
     mutate_admin = AdminMutation.Field()
     mutate_update_user = UpdateUser.Field()
     mutate_set_seer = SetSeerMutation.Field()
-    mutate_set_to_blocked = BlockedUserMutation.Field()
+    mutate_block_user = BlockUserMutation.Field()
+    mutate_unblock_user = UnBlockUserMutation.Field()
     mutate_update_project = UpdateProject.Field()
     mutate_invest_project = InvestProject.Field()
     mutate_seer_project = SeerProjectMutation.Field()
+    mutate_block_project = BlockProjectMutation.Field()
+    mutate_unblock_project = UnBlockProjectMutation.Field()
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
