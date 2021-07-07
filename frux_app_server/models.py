@@ -113,6 +113,7 @@ class Project(db.Model):  # type:ignore
     seer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     seer = db.relationship("User", foreign_keys=[seer_id])
     smart_contract_hash = db.Column(db.String)
+    is_blocked = db.Column(db.Boolean)
 
 
 class Admin(db.Model):  # type:ignore
