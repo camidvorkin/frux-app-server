@@ -1,5 +1,6 @@
 import datetime
 import json
+import os
 
 import graphene
 import requests
@@ -263,7 +264,10 @@ class SeerProjectMutation(graphene.Mutation):
             "stagesCost": stages_cost,
         }
         try:
-            r = requests.post("http://127.0.0.1:3000/project", json=body)
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project",
+                json=body,
+            )
         except requests.ConnectionError:
             return Promise.reject(
                 GraphQLError('Unable to request project! Payments service is down!')
@@ -461,7 +465,7 @@ class InvestProject(graphene.Mutation):
 
         try:
             r = requests.post(
-                f"http://127.0.0.1:3000/project/{project.smart_contract_hash}",
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project/{project.smart_contract_hash}",
                 json=body,
             )
         except requests.ConnectionError:
@@ -556,7 +560,7 @@ class WithdrawFundsMutation(graphene.Mutation):
 
         try:
             r = requests.post(
-                f"http://127.0.0.1:3000/project/{project.smart_contract_hash}/withdraw",
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project/{project.smart_contract_hash}/withdraw",
                 json=body,
             )
         except requests.ConnectionError:

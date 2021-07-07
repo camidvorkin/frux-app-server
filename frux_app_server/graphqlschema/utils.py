@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import threading
 
@@ -36,7 +37,9 @@ class RequestUserWallet(threading.Thread):
 
     def run(self):
         try:
-            r = requests.post("http://127.0.0.1:3000/wallet")
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet"
+            )
         except requests.ConnectionError:
             return
 
