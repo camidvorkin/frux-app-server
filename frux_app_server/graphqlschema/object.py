@@ -12,6 +12,7 @@ from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
+from frux_app_server.models import Wallet as WalletModel
 
 from .filters import FruxFilterableConnectionField
 
@@ -62,7 +63,7 @@ class ProjectStage(SQLAlchemyObjectType):
 
 class Project(SQLAlchemyObjectType):
     db_id = graphene.Int(source='id')
-    amount_collected = graphene.Int()
+    amount_collected = graphene.Float()
     investor_count = graphene.Int()
     favorite_count = graphene.Int()
 
@@ -129,6 +130,13 @@ class Category(SQLAlchemyObjectType):
     class Meta:
         description = 'Information of the category for projects in the system'
         model = CategoryModel
+        interfaces = (graphene.relay.Node,)
+
+
+class Wallet(SQLAlchemyObjectType):
+    class Meta:
+        description = 'A wallet given to a user'
+        model = WalletModel
         interfaces = (graphene.relay.Node,)
 
 

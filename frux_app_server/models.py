@@ -56,6 +56,8 @@ class User(db.Model):  # type:ignore
     project_investments = db.relationship("Investments", back_populates="user")
     interests = db.relationship("Category", secondary=category_association)
     favorited_projects = db.relationship("Favorites", back_populates="user")
+    wallet_address = db.Column(db.String, db.ForeignKey('wallet.address'))
+    wallet = db.relationship("Wallet", back_populates="user")
 
 
 class AssociationHashtag(db.Model):  # type:ignore
@@ -110,6 +112,7 @@ class Project(db.Model):  # type:ignore
     has_seer = db.Column(db.Boolean)
     seer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     seer = db.relationship("User", foreign_keys=[seer_id])
+    smart_contract_hash = db.Column(db.String)
 
 
 class Admin(db.Model):  # type:ignore
@@ -117,3 +120,10 @@ class Admin(db.Model):  # type:ignore
     token = db.Column(db.String, primary_key=True)
     email = db.Column(db.String)
     user_id = db.Column(db.String)
+
+
+class Wallet(db.Model):  # type:ignore
+    __tablename__ = 'wallet'
+    address = db.Column(db.String, primary_key=True)
+    internal_id = db.Column(db.String)
+    user = db.relationship('User', back_populates="wallet")

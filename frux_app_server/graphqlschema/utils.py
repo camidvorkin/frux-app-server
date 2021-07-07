@@ -1,12 +1,18 @@
+import json
+import os
 import re
+import threading
 
+import requests
 import sqlalchemy
 from firebase_admin import auth
+from flask import current_app
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 from graphql import GraphQLError
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import User as UserModel
+from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
 
 
@@ -21,6 +27,35 @@ def is_valid_location(latitude, longitude):
     return re.match(r"^(\-?([0-8]?[0-9](\.\d+)?|90(.[0]+)?))$", latitude) and re.match(
         r"^(\-?([1]?[0-7]?[0-9](\.\d+)?|180((.[0]+)?)))$", longitude
     )
+
+
+class RequestUserWallet(threading.Thread):
+    def __init__(self, user_id, app):
+        threading.Thread.__init__(self)
+        self.user_id = user_id
+        self.app = app
+
+    def run(self):
+        try:
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet"
+            )
+        except requests.ConnectionError:
+            return
+
+        if r.status_code != 200:
+            return
+
+        response_json = json.loads(r.content.decode())
+        wallet = WalletModel(
+            internal_id=response_json["id"], address=response_json["address"]
+        )
+
+        with self.app:
+            db.session.add(wallet)
+            user = UserModel.query.get(self.user_id)
+            user.wallet_address = wallet.address
+            db.session.commit()
 
 
 def requires_auth(func):
@@ -58,9 +93,17 @@ def requires_auth(func):
             info.context.user = UserModel(email=user_email)
             db.session.add(info.context.user)
             db.session.commit()
+
+        if not info.context.user.wallet_address:
+            RequestUserWallet(info.context.user.id, current_app.app_context()).start()
+
         return func(obj, info, **kwargs)
 
     return wrapper
+
+
+def wei_to_eth(wei_hex):
+    return float.fromhex(wei_hex) / (10 ** 18)
 
 
 class CustomSQLAlchemyConnectionField(SQLAlchemyConnectionField):

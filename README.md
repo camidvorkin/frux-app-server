@@ -19,10 +19,10 @@ If you are only interested in the source code, check out the different repos!
 
 Frux is currently being developed by
 
-- [@fdelmazo](https://www.github.com/FdelMazo)
 - [@camidvorkin](https://www.github.com/camidvorkin)
 - [@JuampiRombola](https://www.github.com/JuampiRombola)
 - [@JDSanto](https://www.github.com/JDSanto)
+- [@fdelmazo](https://www.github.com/FdelMazo)
 
 # Installing the project
 This project was built with [poetry](https://python-poetry.org) in mind as the means to manage dependencies. You can follow their [install guide](https://python-poetry.org/docs/#installation) to install it.
@@ -177,6 +177,7 @@ heroku config:set DD_TAGS=service:frux_app_server
 ```
 
 # GitHub Actions
+
 A few pipelines have been set to run on github actions to ensure code quality.
 
 ## `sessions.yml`

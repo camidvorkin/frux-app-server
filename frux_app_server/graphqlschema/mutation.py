@@ -1,9 +1,13 @@
 import datetime
+import json
+import os
 
 import graphene
+import requests
 import sqlalchemy
 from graphql import GraphQLError
 from promise import Promise
+from sqlalchemy.sql import func
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import (
@@ -16,6 +20,7 @@ from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
+from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
 
 from .constants import State, states
@@ -27,8 +32,9 @@ from .object import (
     Project,
     ProjectStage,
     User,
+    Wallet,
 )
-from .utils import is_valid_email, is_valid_location, requires_auth
+from .utils import is_valid_email, is_valid_location, requires_auth, wei_to_eth
 
 
 class UserMutation(graphene.Mutation):
@@ -220,17 +226,63 @@ class SeerProjectMutation(graphene.Mutation):
         self, info, id_project,
     ):  # pylint: disable=unused-argument
         user = info.context.user
-        if not user.is_seer:
+        project = ProjectModel.query.get(id_project)
+
+        if user.id != project.user_id:
             return Promise.reject(
-                GraphQLError('This user does not have seer privilages!')
+                GraphQLError('This user is not the owner of the project!')
             )
 
-        project = ProjectModel.query.get(id_project)
         if project.has_seer:
             return Promise.reject(GraphQLError('Project has a seer already!'))
 
-        user.seer_projects.append(project)
+        # If the project does not have at least one stage, is rejected
+        if len(project.stages) < 1:
+            return Promise.reject(GraphQLError('Project must have at least one stage!'))
+
+        # If there are none seers in the system, is rejected
+        if db.session.query(UserModel).filter_by(is_seer=True).count() == 0:
+            return Promise.reject(
+                GraphQLError('There are no seer availables in the system :(')
+            )
+        seer = (
+            db.session.query(UserModel)
+            .filter_by(is_seer=True)
+            .order_by(func.random())
+            .first()
+        )
+
+        # Create wallet to project
+        stages_cost = []
+        new_goal = 0
+        for stage in project.stages:
+            stages_cost.append(stage.goal)
+            new_goal += stage.goal
+        body = {
+            "ownerId": user.wallet.internal_id,
+            "reviewerId": seer.wallet.internal_id,
+            "stagesCost": stages_cost,
+        }
+        try:
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project",
+                json=body,
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
+            )
+
+        response_json = json.loads(r.content.decode())
+        project.smart_contract_hash = response_json["txHash"]
+        project.seer = seer
         project.has_seer = True
+        project.goal = new_goal
+        project.current_state = State.FUNDING
         db.session.commit()
         return project
 
@@ -395,16 +447,136 @@ class InvestProject(graphene.Mutation):
     @requires_auth
     def mutate(self, info, id_project, invested_amount):
 
-        invest = InvestmentsModel(
-            user_id=info.context.user.id,
-            project_id=id_project,
-            invested_amount=invested_amount,
-            date_of_investment=datetime.datetime.utcnow(),
-        )
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
 
-        db.session.add(invest)
+        if project.current_state != State.FUNDING:
+            return Promise.reject(GraphQLError('The project is not in funding state!'))
+
+        if not info.context.user.wallet:
+            return Promise.reject(GraphQLError('User does not have a wallet!'))
+
+        body = {
+            "funderId": info.context.user.wallet.internal_id,
+            "amountToFund": invested_amount,
+        }
+
+        try:
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project/{project.smart_contract_hash}",
+                json=body,
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+
+        if r.status_code != 200:
+            error = json.loads(r.text)
+            if error['code'] == 'INSUFFICIENT_FUNDS':
+                return Promise.reject(
+                    GraphQLError('Unable to fund project! Insufficient funds!')
+                )
+            return Promise.reject(
+                GraphQLError(f'Unable to fund project! {r.status_code} - {r.text}')
+            )
+
+        tx = json.loads(r.text)
+        invested_amount = wei_to_eth(tx['value']['hex'])
+
+        project_collected = (
+            db.session.query(func.sum(InvestmentsModel.invested_amount))
+            .filter(InvestmentsModel.project_id == id_project)
+            .scalar()
+        )
+        if project.goal - project_collected <= invested_amount:
+            project.current_state = State.IN_PROGRESS
+            invested_amount = project.goal - project_collected
+
+        q = InvestmentsModel.query.filter_by(
+            user_id=info.context.user.id, project_id=id_project
+        )
+        if q.count() == 0:
+            invest = InvestmentsModel(
+                user_id=info.context.user.id,
+                project_id=id_project,
+                invested_amount=invested_amount,
+                date_of_investment=datetime.datetime.utcnow(),
+            )
+            db.session.add(invest)
+        else:
+            invest = q.first()
+            invest.invested_amount += invested_amount
+            invest.date_of_investment = datetime.datetime.utcnow()
+
         db.session.commit()
         return invest
+
+
+class WithdrawFundsMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        withdraw_amount = graphene.Float(required=False)
+
+    Output = Investments
+
+    @requires_auth
+    def mutate(self, info, id_project, withdraw_amount=None):
+
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
+
+        if (
+            project.current_state != State.FUNDING
+            and project.current_state != State.CANCELED
+        ):
+            return Promise.reject(
+                GraphQLError('The project is not cancelled or in funding state!')
+            )
+
+        if not info.context.user.wallet:
+            return Promise.reject(GraphQLError('User does not have a wallet!'))
+
+        q = InvestmentsModel.query.filter_by(
+            user_id=info.context.user.id, project_id=id_project
+        )
+        if q.count() == 0:
+            return Promise.reject(GraphQLError('User did not invest in the project!'))
+
+        investment = q.first()
+
+        body = {'funderId': info.context.user.wallet.internal_id}
+
+        if withdraw_amount:
+            body['fundsToWithdraw'] = withdraw_amount
+            if withdraw_amount > investment.invested_amount:
+                return Promise.reject(GraphQLError('Invalid withdrawal amount!'))
+        else:
+            withdraw_amount = investment.invested_amount
+
+        try:
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project/{project.smart_contract_hash}/withdraw",
+                json=body,
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to withdraw! {r.status_code} - {r.text}')
+            )
+
+        investment.invested_amount -= withdraw_amount
+        db.session.commit()
+
+        return investment
 
 
 class FavProject(graphene.Mutation):
@@ -457,6 +629,14 @@ class ProjectStageMutation(graphene.Mutation):
         self, info, id_project, title, description, goal
     ):  # pylint: disable=unused-argument
 
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
+
+        if info.context.user != project.owner:
+            return Promise.reject(GraphQLError('User is not the project owner!'))
+
         stage = ProjectStageModel(
             title=title, project_id=id_project, description=description, goal=goal,
         )
@@ -482,3 +662,4 @@ class Mutation(graphene.ObjectType):
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
+    mutate_withdraw_funds = WithdrawFundsMutation.Field()
