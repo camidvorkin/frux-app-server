@@ -511,6 +511,70 @@ class InvestProject(graphene.Mutation):
         return invest
 
 
+class WithdrawFundsMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        withdraw_amount = graphene.Float(required=False)
+
+    Output = Investments
+
+    @requires_auth
+    def mutate(self, info, id_project, withdraw_amount=None):
+
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
+
+        if (
+            project.current_state != State.FUNDING
+            and project.current_state != State.CANCELED
+        ):
+            return Promise.reject(
+                GraphQLError('The project is not cancelled or in funding state!')
+            )
+
+        if not info.context.user.wallet:
+            return Promise.reject(GraphQLError('User does not have a wallet!'))
+
+        q = InvestmentsModel.query.filter_by(
+            user_id=info.context.user.id, project_id=id_project
+        )
+        if q.count() == 0:
+            return Promise.reject(GraphQLError('User did not invest in the project!'))
+
+        investment = q.first()
+
+        body = {'funderId': info.context.user.wallet.internal_id}
+
+        if withdraw_amount:
+            body['fundsToWithdraw'] = withdraw_amount
+            if withdraw_amount > investment.invested_amount:
+                return Promise.reject(GraphQLError('Invalid withdrawal amount!'))
+        else:
+            withdraw_amount = investment.invested_amount
+
+        try:
+            r = requests.post(
+                f"http://127.0.0.1:3000/project/{project.smart_contract_hash}/withdraw",
+                json=body,
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to withdraw! {r.status_code} - {r.text}')
+            )
+
+        investment.invested_amount -= withdraw_amount
+        db.session.commit()
+
+        return investment
+
+
 class FavProject(graphene.Mutation):
     class Arguments:
         id_project = graphene.Int(required=True)
@@ -594,3 +658,4 @@ class Mutation(graphene.ObjectType):
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
+    mutate_withdraw_funds = WithdrawFundsMutation.Field()
