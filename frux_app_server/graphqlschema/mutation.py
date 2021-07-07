@@ -276,6 +276,7 @@ class SeerProjectMutation(graphene.Mutation):
         project.smart_contract_hash = response_json["txHash"]
         project.seer = seer
         project.has_seer = True
+        project.current_state = State.FUNDING
         db.session.commit()
         return project
 
@@ -439,6 +440,38 @@ class InvestProject(graphene.Mutation):
 
     @requires_auth
     def mutate(self, info, id_project, invested_amount):
+
+        if db.session.query(ProjectModel).filter_by(project_id=id_project).count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = (
+            db.session.query(ProjectModel).filter_by(project_id=id_project).first()
+        )
+
+        if project.state != State.FUNDING:
+            return Promise.reject(GraphQLError('The project is not in funding state!'))
+
+        body = {
+            "funderId": info.context.user.wallet.internal_id,
+            "amountToFund": invested_amount,
+        }
+
+        if not info.context.user.wallet:
+            return Promise.reject(GraphQLError('User does not have a wallet!'))
+
+        try:
+            r = requests.post(
+                f"http://127.0.0.1:3000/project/{project.smart_contract_hash}",
+                json=body,
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to fund project! {r.status_code} - {r.text}')
+            )
 
         invest = InvestmentsModel(
             user_id=info.context.user.id,

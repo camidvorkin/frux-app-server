@@ -4,8 +4,10 @@ import enum
 
 class State(enum.Enum):
     CREATED = 'CREATED'
+    FUNDING = 'FUNDING'
     IN_PROGRESS = 'IN_PROGRESS'
-    COMPLETE = 'COMPLETE'
+    COMPLETED = 'COMPLETED'
+    CANCELED = 'CANCELED'
 
 
 states = [state.value for state in State]
