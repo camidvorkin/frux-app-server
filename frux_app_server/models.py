@@ -52,7 +52,7 @@ class User(db.Model):  # type:ignore
     latitude = db.Column(db.String)
     longitude = db.Column(db.String)
     phone = db.Column(db.String)
-    is_blocked = db.Column(db.Boolean)
+    is_blocked = db.Column(db.Boolean, default=False)
     project_investments = db.relationship("Investments", back_populates="user")
     interests = db.relationship("Category", secondary=category_association)
     favorited_projects = db.relationship("Favorites", back_populates="user")
@@ -113,7 +113,7 @@ class Project(db.Model):  # type:ignore
     seer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     seer = db.relationship("User", foreign_keys=[seer_id])
     smart_contract_hash = db.Column(db.String)
-    is_blocked = db.Column(db.Boolean)
+    is_blocked = db.Column(db.Boolean, default=False)
 
 
 class Admin(db.Model):  # type:ignore
