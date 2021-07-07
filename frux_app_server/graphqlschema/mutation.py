@@ -421,7 +421,7 @@ class UpdateProject(graphene.Mutation):
         if category is not None:
             if db.session.query(CategoryModel).filter_by(name=category).count() != 1:
                 return Promise.reject(GraphQLError('Invalid Category!'))
-            project.category = category
+            project.category_name = category
 
         if latitude and longitude and is_valid_location(latitude, longitude):
             project.latitude = latitude
