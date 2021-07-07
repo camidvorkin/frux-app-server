@@ -99,6 +99,10 @@ def requires_auth(func):
     return wrapper
 
 
+def wei_to_eth(wei_hex):
+    return float.fromhex(wei_hex) / (10 ** 18)
+
+
 class CustomSQLAlchemyConnectionField(SQLAlchemyConnectionField):
     @classmethod
     def get_query(cls, model, info, sort=None, **args):

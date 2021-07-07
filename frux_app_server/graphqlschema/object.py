@@ -63,7 +63,7 @@ class ProjectStage(SQLAlchemyObjectType):
 
 class Project(SQLAlchemyObjectType):
     db_id = graphene.Int(source='id')
-    amount_collected = graphene.Int()
+    amount_collected = graphene.Float()
     investor_count = graphene.Int()
     favorite_count = graphene.Int()
 

@@ -33,7 +33,7 @@ from .object import (
     User,
     Wallet,
 )
-from .utils import is_valid_email, is_valid_location, requires_auth
+from .utils import is_valid_email, is_valid_location, requires_auth, wei_to_eth
 
 
 class UserMutation(graphene.Mutation):
@@ -252,13 +252,15 @@ class SeerProjectMutation(graphene.Mutation):
         )
 
         # Create wallet to project
-        stagesCost = []
+        stages_cost = []
+        new_goal = 0
         for stage in project.stages:
-            stagesCost.append(stage.goal)
+            stages_cost.append(stage.goal)
+            new_goal += stage.goal
         body = {
             "ownerId": user.wallet.internal_id,
             "reviewerId": seer.wallet.internal_id,
-            "stagesCost": stagesCost,
+            "stagesCost": stages_cost,
         }
         try:
             r = requests.post("http://127.0.0.1:3000/project", json=body)
@@ -272,10 +274,10 @@ class SeerProjectMutation(graphene.Mutation):
             )
 
         response_json = json.loads(r.content.decode())
-        print(response_json)
         project.smart_contract_hash = response_json["txHash"]
         project.seer = seer
         project.has_seer = True
+        project.goal = new_goal
         project.current_state = State.FUNDING
         db.session.commit()
         return project
@@ -441,22 +443,21 @@ class InvestProject(graphene.Mutation):
     @requires_auth
     def mutate(self, info, id_project, invested_amount):
 
-        if db.session.query(ProjectModel).filter_by(project_id=id_project).count() != 1:
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
             return Promise.reject(GraphQLError('No project found!'))
-        project = (
-            db.session.query(ProjectModel).filter_by(project_id=id_project).first()
-        )
+        project = query.first()
 
-        if project.state != State.FUNDING:
+        if project.current_state != State.FUNDING:
             return Promise.reject(GraphQLError('The project is not in funding state!'))
+
+        if not info.context.user.wallet:
+            return Promise.reject(GraphQLError('User does not have a wallet!'))
 
         body = {
             "funderId": info.context.user.wallet.internal_id,
             "amountToFund": invested_amount,
         }
-
-        if not info.context.user.wallet:
-            return Promise.reject(GraphQLError('User does not have a wallet!'))
 
         try:
             r = requests.post(
@@ -469,18 +470,43 @@ class InvestProject(graphene.Mutation):
             )
 
         if r.status_code != 200:
+            error = json.loads(r.text)
+            if error['code'] == 'INSUFFICIENT_FUNDS':
+                return Promise.reject(
+                    GraphQLError('Unable to fund project! Insufficient funds!')
+                )
             return Promise.reject(
                 GraphQLError(f'Unable to fund project! {r.status_code} - {r.text}')
             )
 
-        invest = InvestmentsModel(
-            user_id=info.context.user.id,
-            project_id=id_project,
-            invested_amount=invested_amount,
-            date_of_investment=datetime.datetime.utcnow(),
-        )
+        tx = json.loads(r.text)
+        invested_amount = wei_to_eth(tx['value']['hex'])
 
-        db.session.add(invest)
+        project_collected = (
+            db.session.query(func.sum(InvestmentsModel.invested_amount))
+            .filter(InvestmentsModel.project_id == id_project)
+            .scalar()
+        )
+        if project.goal - project_collected <= invested_amount:
+            project.current_state = State.IN_PROGRESS
+            invested_amount = project.goal - project_collected
+
+        q = InvestmentsModel.query.filter_by(
+            user_id=info.context.user.id, project_id=id_project
+        )
+        if q.count() == 0:
+            invest = InvestmentsModel(
+                user_id=info.context.user.id,
+                project_id=id_project,
+                invested_amount=invested_amount,
+                date_of_investment=datetime.datetime.utcnow(),
+            )
+            db.session.add(invest)
+        else:
+            invest = q.first()
+            invest.invested_amount += invested_amount
+            invest.date_of_investment = datetime.datetime.utcnow()
+
         db.session.commit()
         return invest
 
@@ -534,6 +560,14 @@ class ProjectStageMutation(graphene.Mutation):
     def mutate(
         self, info, id_project, title, description, goal
     ):  # pylint: disable=unused-argument
+
+        query = db.session.query(ProjectModel).filter_by(id=id_project)
+        if query.count() != 1:
+            return Promise.reject(GraphQLError('No project found!'))
+        project = query.first()
+
+        if info.context.user != project.owner:
+            return Promise.reject(GraphQLError('User is not the project owner!'))
 
         stage = ProjectStageModel(
             title=title, project_id=id_project, description=description, goal=goal,

@@ -6,7 +6,7 @@ class State(enum.Enum):
     CREATED = 'CREATED'
     FUNDING = 'FUNDING'
     IN_PROGRESS = 'IN_PROGRESS'
-    COMPLETED = 'COMPLETED'
+    COMPLETE = 'COMPLETE'
     CANCELED = 'CANCELED'
 
 
