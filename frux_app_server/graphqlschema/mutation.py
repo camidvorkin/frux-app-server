@@ -6,6 +6,7 @@ import requests
 import sqlalchemy
 from graphql import GraphQLError
 from promise import Promise
+from sqlalchemy.sql import func
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import (
@@ -224,16 +225,56 @@ class SeerProjectMutation(graphene.Mutation):
         self, info, id_project,
     ):  # pylint: disable=unused-argument
         user = info.context.user
-        if not user.is_seer:
+        project = ProjectModel.query.get(id_project)
+
+        if user.id != project.user_id:
             return Promise.reject(
-                GraphQLError('This user does not have seer privilages!')
+                GraphQLError('This user is not the owner of the project!')
             )
 
-        project = ProjectModel.query.get(id_project)
         if project.has_seer:
             return Promise.reject(GraphQLError('Project has a seer already!'))
 
-        user.seer_projects.append(project)
+        # If the project does not have at least one stage, is rejected
+        if len(project.stages) < 1:
+            return Promise.reject(GraphQLError('Project must have at least one stage!'))
+
+        # If there are none seers in the system, is rejected
+        if db.session.query(UserModel).filter_by(is_seer=True).count() == 0:
+            return Promise.reject(
+                GraphQLError('There are no seer availables in the system :(')
+            )
+        seer = (
+            db.session.query(UserModel)
+            .filter_by(is_seer=True)
+            .order_by(func.random())
+            .first()
+        )
+
+        # Create wallet to project
+        stagesCost = []
+        for stage in project.stages:
+            stagesCost.append(stage.goal)
+        body = {
+            "ownerId": user.wallet.internal_id,
+            "reviewerId": seer.wallet.internal_id,
+            "stagesCost": stagesCost,
+        }
+        try:
+            r = requests.post("http://127.0.0.1:3000/project", json=body)
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
+            )
+
+        response_json = json.loads(r.content.decode())
+        print(response_json)
+        project.smart_contract_hash = response_json["txHash"]
+        project.seer = seer
         project.has_seer = True
         db.session.commit()
         return project
@@ -473,39 +514,6 @@ class ProjectStageMutation(graphene.Mutation):
         return stage
 
 
-class EnableWallet(graphene.Mutation):
-    Output = Wallet
-
-    @requires_auth
-    def mutate(self, info):  # pylint: disable=unused-argument
-
-        if info.context.user.wallet_address is not None:
-            return WalletModel.query.get(info.context.user.wallet_address)
-
-        try:
-            r = requests.post("http://127.0.0.1:3000/wallet")
-        except requests.ConnectionError:
-            return Promise.reject(
-                GraphQLError('Unable to request wallet! Payments service is down!')
-            )
-
-        if r.status_code != 200:
-            return Promise.reject(
-                GraphQLError(f'Unable to request wallet! {r.status_code}')
-            )
-
-        response_json = json.loads(r.content.decode())
-        wallet = WalletModel(
-            internal_id=response_json["id"], address=response_json["address"]
-        )
-
-        db.session.add(wallet)
-        info.context.user.wallet_address = wallet.address
-
-        db.session.commit()
-        return wallet
-
-
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
@@ -519,4 +527,3 @@ class Mutation(graphene.ObjectType):
     mutate_fav_project = FavProject.Field()
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
-    mutate_enable_wallet = EnableWallet.Field()

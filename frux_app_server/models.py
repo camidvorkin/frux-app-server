@@ -112,6 +112,7 @@ class Project(db.Model):  # type:ignore
     has_seer = db.Column(db.Boolean)
     seer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     seer = db.relationship("User", foreign_keys=[seer_id])
+    smart_contract_hash = db.Column(db.String)
 
 
 class Admin(db.Model):  # type:ignore
