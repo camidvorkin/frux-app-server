@@ -179,7 +179,6 @@ class BlockUserMutation(graphene.Mutation):
 
     Output = User
 
-    @requires_auth
     def mutate(self, info, user_id):  # pylint: disable=unused-argument
 
         query = db.session.query(UserModel).filter_by(id=user_id)
@@ -197,7 +196,6 @@ class UnBlockUserMutation(graphene.Mutation):
 
     Output = User
 
-    @requires_auth
     def mutate(self, info, user_id):  # pylint: disable=unused-argument
 
         query = db.session.query(UserModel).filter_by(id=user_id)
@@ -529,7 +527,6 @@ class BlockProjectMutation(graphene.Mutation):
 
     Output = Project
 
-    @requires_auth
     def mutate(
         self, info, id_project,
     ):  # pylint: disable=unused-argument
@@ -550,7 +547,6 @@ class UnBlockProjectMutation(graphene.Mutation):
 
     Output = Project
 
-    @requires_auth
     def mutate(
         self, info, id_project,
     ):  # pylint: disable=unused-argument
