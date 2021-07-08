@@ -19,8 +19,8 @@ QUERY_ALL_HASHTAGS = '''
 '''
 
 MUTATION_NEW_PROJECT_WITH_HASHTAGS = '''
-    mutation NewProject($description: String!, $name: String!, $goal: Int!, $hashtags: [String]) {
-        mutateProject(name: $name, description: $description, goal: $goal, hashtags: $hashtags) {
+    mutation NewProject($description: String!, $name: String!, $goal: Int!, $hashtags: [String], $deadline: String!) {
+        mutateProject(name: $name, description: $description, goal: $goal, hashtags: $hashtags, deadline: $deadline) {
             name,
             dbId
         }
@@ -59,6 +59,7 @@ def step_impl(context, hashtags):
         'description': "descriptionTest",
         'name': "nameTest",
         'goal': 1,
+        'deadline': "2022-1-1",
     }
     context.response = context.client.post(
         '/graphql',
@@ -83,7 +84,6 @@ def step_impl(context):
 
 @then('get a list of {n} hashtags')
 def step_impl(context, n):
-    assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert len(res['data']['allHashtags']['edges']) == int(n)
 
