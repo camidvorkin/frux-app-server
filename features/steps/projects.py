@@ -33,8 +33,8 @@ QUERY_ALL_PROJECT_FILTERS = '''
 '''
 
 MUTATION_NEW_PROJECT = '''
-    mutation NewProject($description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String]) {
-        mutateProject(name: $name, description: $description, goal: $goal, category: $category, hashtags: $hashtags) {
+    mutation NewProject($description: String!, $name: String!, $goal: Int!, $category: String, $hashtags: [String], $deadline: String!) {
+        mutateProject(name: $name, description: $description, goal: $goal, category: $category, hashtags: $hashtags, deadline: $deadline) {
             name,
             description,
             goal,
@@ -75,6 +75,7 @@ def step_impl(context):
 @when('user create a project "{name}"')
 def step_impl(context, name):
     variables['name'] = name
+    variables['deadline'] = "2022-1-1"
     variables['category'] = None
     variables['stage'] = None
 
@@ -157,7 +158,6 @@ def step_impl(context, name, description, goal, category, state):
 
 @then('get a list of {n} projects')
 def step_impl(context, n):
-    assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert len(res['data']['allProjects']['edges']) == int(n)
 

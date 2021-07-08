@@ -45,10 +45,8 @@ class UserMutation(graphene.Mutation):
         first_name = graphene.String(required=True)
         last_name = graphene.String(required=True)
         description = graphene.String()
-        address = graphene.String()
         latitude = graphene.String(required=True)
         longitude = graphene.String(required=True)
-        phone = graphene.String()
         interests = graphene.List(graphene.String)
 
     Output = User
@@ -64,8 +62,6 @@ class UserMutation(graphene.Mutation):
         latitude,
         longitude,
         description="",
-        address="",
-        phone="",
         interests=None,
     ):  # pylint: disable=unused-argument
         if not is_valid_email(email):
@@ -87,10 +83,8 @@ class UserMutation(graphene.Mutation):
             description=description,
             creation_date_time=date,
             last_login=date,
-            address=address,
             longitude=longitude,
             latitude=latitude,
-            phone=phone,
             is_seer=False,
             is_blocked=False,
         )
@@ -119,10 +113,8 @@ class UpdateUser(graphene.Mutation):
         first_name = graphene.String()
         last_name = graphene.String()
         description = graphene.String()
-        address = graphene.String()
         latitude = graphene.String()
         longitude = graphene.String()
-        phone = graphene.String()
         interests = graphene.List(graphene.String)
 
     Output = User
@@ -136,10 +128,8 @@ class UpdateUser(graphene.Mutation):
         first_name=None,
         last_name=None,
         description=None,
-        address=None,
         latitude=None,
         longitude=None,
-        phone=None,
         interests=None,
     ):  # pylint: disable=unused-argument
         user = info.context.user
@@ -153,13 +143,9 @@ class UpdateUser(graphene.Mutation):
             user.last_name = last_name
         if description:
             user.description = description
-        if address:
-            user.address = address
         if latitude and longitude and is_valid_location(latitude, longitude):
             user.latitude = latitude
             user.longitude = longitude
-        if phone:
-            user.phone = phone
         if interests is not None:
             user.interests = []
             for c in interests:
@@ -168,6 +154,8 @@ class UpdateUser(graphene.Mutation):
                 else:
                     category = db.session.query(CategoryModel).filter_by(name=c).one()
                 user.interests.append(category)
+        if user.creation_date_time is None:
+            user.creation_date_time = datetime.datetime.utcnow()
         db.session.commit()
         return user
 
@@ -321,6 +309,7 @@ class ProjectMutation(graphene.Mutation):
         latitude = graphene.String()
         longitude = graphene.String()
         uri_image = graphene.String()
+        deadline = graphene.String(required=True)
 
     Output = Project
 
@@ -331,6 +320,7 @@ class ProjectMutation(graphene.Mutation):
         name,
         description,
         goal,
+        deadline,
         hashtags=None,
         category=None,
         latitude="0.0",
@@ -352,6 +342,11 @@ class ProjectMutation(graphene.Mutation):
                 GraphQLError('Invalid Stage! Try with:' + ",".join(states))
             )
 
+        deadline = deadline.split("-")
+        deadline = datetime.datetime(
+            int(deadline[0]), int(deadline[1]), int(deadline[2])
+        )
+
         project = ProjectModel(
             name=name,
             description=description,
@@ -360,6 +355,8 @@ class ProjectMutation(graphene.Mutation):
             category_name=category,
             latitude=latitude,
             longitude=longitude,
+            deadline=deadline,
+            creation_date=datetime.datetime.utcnow(),
             current_state=State.CREATED,
             uri_image=uri_image,
             has_seer=False,
@@ -389,6 +386,7 @@ class UpdateProject(graphene.Mutation):
         latitude = graphene.String()
         longitude = graphene.String()
         uri_image = graphene.String()
+        deadline = graphene.String()
 
     Output = Project
 
@@ -404,6 +402,7 @@ class UpdateProject(graphene.Mutation):
         latitude=None,
         longitude=None,
         uri_image=None,
+        deadline=None,
     ):
 
         project = ProjectModel.query.get(id_project)
@@ -439,6 +438,8 @@ class UpdateProject(graphene.Mutation):
             project.longitude = longitude
         if uri_image:
             project.uri_image = uri_image
+        if deadline:
+            project.deadline = deadline
 
         db.session.commit()
         return project
