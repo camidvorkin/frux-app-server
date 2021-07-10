@@ -690,6 +690,12 @@ class ProjectStageMutation(graphene.Mutation):
         project = ProjectModel.query.get(id_project)
         project.stages.append(stage)
 
+        new_goal = 0
+        for stage in project.stages:
+            new_goal += stage.goal
+
+        project.goal = new_goal
+
         db.session.add(stage)
         db.session.commit()
         return stage
