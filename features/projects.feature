@@ -9,7 +9,7 @@ Feature: projects
       And the category is "Arts"
       And hashtags "#planet,#green"
       And the total amount to be collected is 5000
-      Then the project "Environment Project", description "Plant a tree", category "Arts", state "CREATED" and goal 5000 is created correctly
+      Then the project "Environment Project", description "Plant a tree", category "Arts", state "CREATED" and goal 0 is created correctly
 
   Scenario: a project with no category is set as "Other"
      Given a new project
@@ -19,7 +19,7 @@ Feature: projects
       And is about "Computer engineering"
       And hashtags "#python"
       And the total amount to be collected is 5000
-      Then the project "Tech Project", description "Computer engineering", category "Other", state "CREATED" and goal 5000 is created correctly
+      Then the project "Tech Project", description "Computer engineering", category "Other", state "CREATED" and goal 0 is created correctly
 
   Scenario: a project with no state it just started
      Given a new project
@@ -30,7 +30,7 @@ Feature: projects
       And the category is "Music"
       And hashtags "#guitar,#rock,#music"
       And the total amount to be collected is 2000
-      Then the project "Music Project", description "Create a short clip", category "Music", state "CREATED" and goal 2000 is created correctly
+      Then the project "Music Project", description "Create a short clip", category "Music", state "CREATED" and goal 0 is created correctly
 
   Scenario: list projects
      Given user with mail "johndoe@gmail.com" is authenticated

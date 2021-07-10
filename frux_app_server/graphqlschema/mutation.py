@@ -301,7 +301,7 @@ class ProjectMutation(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         description = graphene.String(required=True)
-        goal = graphene.Int(required=True)
+        goal = graphene.Int()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
         latitude = graphene.String()
@@ -325,7 +325,7 @@ class ProjectMutation(graphene.Mutation):
         longitude="0.0",
         current_state=(State.CREATED.value),
         uri_image="",
-    ):
+    ):  # pylint: disable=unused-argument
         if not hashtags:
             hashtags = []
 
@@ -348,7 +348,7 @@ class ProjectMutation(graphene.Mutation):
         project = ProjectModel(
             name=name,
             description=description,
-            goal=goal,
+            goal=0,
             owner=info.context.user,
             category_name=category,
             latitude=latitude,
