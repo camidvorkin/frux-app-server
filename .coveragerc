@@ -2,5 +2,6 @@
 omit =
     features/*
     migrations/*
+    frux_app_server/manage.py
 source = frux_app_server
 command_line = -m behive
