@@ -5,7 +5,6 @@ from commons import authenticate_user
 
 from frux_app_server.models import User
 
-ADMIN_TOKEN = 'AdminTestAuthToken'
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
 QUERY_ALL_USERS = '''
@@ -128,6 +127,7 @@ def step_impl(context, email):
         latitude="00.0000",
         longitude="00.0000",
     )
+    authenticate_user(context, email, email)
     with context.app.app_context():
         context.db.session.add(user)
         context.db.session.commit()
@@ -153,7 +153,6 @@ def step_impl(context, email):
 def step_impl(context, username, image_path):
     updated_variables['username'] = username
     updated_variables['imagePath'] = image_path
-    authenticate_user(context, image_path, ADMIN_TOKEN)
 
     context.response = context.client.post(
         '/graphql',
@@ -161,20 +160,22 @@ def step_impl(context, username, image_path):
             'query': MUTATION_UPDATE_USER,
             'variables': json.dumps(updated_variables),
         },
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
 
 
-@then('the user\'s information change')
-def step_impl(context):
+@then(
+    'the user\'s username changes to "{username}" and their image changes to "{image_path}"'
+)
+def step_impl(context, username, image_path):
     # Get updated project
     context.response = context.client.post(
         '/graphql',
-        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 2})},
+        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 1})},
     )
     res = json.loads(context.response.data.decode())
-    assert res['data']['user']['username'] == updated_variables['username']
-    assert res['data']['user']['imagePath'] == updated_variables['imagePath']
+    assert res['data']['user']['username'] == username
+    assert res['data']['user']['imagePath'] == image_path
 
 
 @then(u'user already registered with description "" and no role')

@@ -33,7 +33,7 @@ Feature: users
   Scenario: update user information
      Given user is already registered with mail "pepe@fi.uba.ar"
       When user update their username to "Pepito" and their image to "image7"
-      Then the user's information change
+      Then the user's username changes to "Pepito" and their image changes to "image7"
 
    Scenario: a new user is registered with default values
      Given user is not registered

@@ -44,6 +44,17 @@ MUTATION_NEW_PROJECT = '''
     }
 '''
 
+MUTATION_NEW_PROJECT_SIMPLE = '''
+    mutation NewProject($description: String!, $name: String!, $goal: Int!, $deadline: String!) {
+        mutateProject(name: $name, description: $description, goal: $goal, deadline: $deadline) {
+            name,
+            description,
+            goal,
+            dbId
+        }
+    }
+'''
+
 QUERY_SINGLE_PROJECT = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
@@ -111,7 +122,7 @@ def step_impl(context, goal):
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
 
 
@@ -122,12 +133,12 @@ def step_impl(context):
     variables['goal'] = 1
     variables['hashtags'] = []
     variables['description'] = "Old project"
-    authenticate_user(context, "olduser@gmail.com", ADMIN_TOKEN)
+    authenticate_user(context, "olduser@gmail.com", "olduser@gmail.com")
 
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
 
 
@@ -204,7 +215,7 @@ def step_impl(context):
             'query': MUTATION_UPDATE_PROJECT,
             'variables': json.dumps(updated_variables),
         },
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
     # Get updated project
     context.response = context.client.post(
@@ -225,3 +236,24 @@ def step_impl(context, name, description):
     res = json.loads(context.response.data.decode())
     assert res['data']['project']['description'] == description
     assert res['data']['project']['name'] == name
+
+
+@given(u'a new project was created by the user with title "{title}"')
+def step_impl(context, title):
+    mutation_vars = {
+        'description': "descriptionTest",
+        'name': title,
+        'goal': 1,
+        'deadline': '2022-01-01',
+    }
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': MUTATION_NEW_PROJECT_SIMPLE,
+            'variables': json.dumps(mutation_vars),
+        },
+        headers={'Authorization': f'Bearer {context.last_token}'},
+    )
+    context.last_project_id = json.loads(context.response.data.decode())['data'][
+        'mutateProject'
+    ]['dbId']
