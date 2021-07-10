@@ -43,6 +43,7 @@ def request_user_wallet(user):
         internal_id=response_json["id"], address=response_json["address"]
     )
 
+    db.session.add(wallet)
     user.wallet_address = wallet.address
 
 

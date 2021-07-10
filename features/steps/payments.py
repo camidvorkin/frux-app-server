@@ -11,7 +11,35 @@ from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 QUERY_PROFILE = '''
     {
         profile {
-            walletAddress
+            walletAddress,
+            wallet {
+                internalId
+            }
+            seerProjects {
+                edges {
+                    node {
+                        dbId,
+                        name
+                    }
+                }
+            }
+        }
+    }
+'''
+
+MUTATION_SEER_PROJECT = '''
+    mutation SeerProject($idProject: Int!) {
+        mutateSeerProject(idProject: $idProject) {
+            dbId,
+            currentState
+        }
+    }
+'''
+
+QUERY_PROJECT_STATE = '''
+    query FindProject($dbId: Int!){
+        project(dbId: $dbId) {
+            currentState
         }
     }
 '''
@@ -60,3 +88,59 @@ def step_impl(context, email):
             email=email
         )
     )
+
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': QUERY_PROFILE},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert res['data']['profile']['walletAddress'] is not None
+    assert res['data']['profile']['wallet']['internalId'] is not None
+
+
+@when(u'the owner of the project "{email}" enables the project for funding')
+@responses.activate
+def step_impl(context, email):
+    mock_smart_contract_response('/project', {'txHash': str(uuid.uuid1())}, 200)
+
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': MUTATION_SEER_PROJECT,
+            'variables': json.dumps({'idProject': context.last_project_id}),
+        },
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+
+@then(u'the project state is "{state}"')
+def step_impl(context, state):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_PROJECT_STATE,
+            'variables': json.dumps({'dbId': context.last_project_id}),
+        },
+        headers={'Authorization': f'Bearer {context.last_token}'},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert res['data']['project']['currentState'] == state
+
+
+@then(u'user "{email}" is supervising {n} project as seer')
+def step_impl(context, email, n):
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': QUERY_PROFILE},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert len(res['data']['profile']['seerProjects']['edges']) == int(n)

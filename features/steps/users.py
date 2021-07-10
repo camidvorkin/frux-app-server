@@ -59,6 +59,15 @@ MUTATION_UPDATE_USER = '''
     }
 '''
 
+MUTATION_SET_SEER = '''
+    mutation {
+        mutateSetSeer {
+            email,
+            isSeer
+        }
+    }
+'''
+
 variables = {}
 updated_variables = {}
 
@@ -194,3 +203,16 @@ def step_impl(context):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert res['data']['mutateUser']['email'] == variables['email']
+
+
+@given(u'user with mail "{email}" has a seer role')
+def step_impl(context, email):
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_SET_SEER, 'variables': json.dumps({'dbId': 1})},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert res['data']['mutateSetSeer']['isSeer']
