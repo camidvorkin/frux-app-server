@@ -87,6 +87,15 @@ class Category(db.Model):  # type:ignore
     description = db.Column(db.String)
 
 
+class Calification(db.Model):  # type:ignore
+    __tablename__ = 'calification'
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    project = db.relationship('Project', back_populates="reviews")
+    puntuation = db.Column(db.Float)
+    review = db.Column(db.String)
+
+
 class Project(db.Model):  # type:ignore
     __tablename__ = 'project'
     id = db.Column(db.Integer, primary_key=True)
@@ -114,6 +123,7 @@ class Project(db.Model):  # type:ignore
     is_blocked = db.Column(db.Boolean, default=False)
     creation_date = db.Column(db.DateTime)
     deadline = db.Column(db.DateTime)
+    reviews = db.relationship(Calification, back_populates="project")
 
 
 class Admin(db.Model):  # type:ignore

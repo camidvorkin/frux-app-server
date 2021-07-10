@@ -7,8 +7,10 @@ import sqlalchemy
 from firebase_admin import auth
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 from graphql import GraphQLError
+from promise import Promise
 
 from frux_app_server.models import Admin as AdminModel
+from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
@@ -102,3 +104,10 @@ class CustomSQLAlchemyConnectionField(SQLAlchemyConnectionField):
         return requires_auth(super(CustomSQLAlchemyConnectionField, cls).get_query)(
             model, info, sort=sort, **args
         )
+
+
+def get_project(project_id):
+    query = db.session.query(ProjectModel).filter_by(id=project_id)
+    if query.count() != 1:
+        return Promise.reject(GraphQLError('No project found!'))
+    return query.first()
