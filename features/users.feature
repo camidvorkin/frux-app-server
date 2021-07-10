@@ -30,10 +30,15 @@ Feature: users
       When user with id 1 is listed
       Then get user with mail "pepe@fi.uba.ar"
 
-  Scenario: update user information
+  Scenario: update username and image
      Given user is already registered with mail "pepe@fi.uba.ar"
-      When user update their username to "Pepito" and their image to "image7"
+      When user updates their username to "Pepito" and their image to "image7"
       Then the user's username changes to "Pepito" and their image changes to "image7"
+
+  Scenario: update user location
+     Given user is already registered with mail "pepe@fi.uba.ar"
+      When user updates their latitude to "-34.588363" and longitude to "-58.423254"
+      Then the user's latitude changes to "-34.588363" and longitude to "-58.423254"
 
    Scenario: a new user is registered with default values
      Given user is not registered
@@ -60,4 +65,22 @@ Feature: users
       When user registers with username "pepito", name "Pepe", lastname "Suarez" and mail "pepe@fi.uba.ar"
       And interests "Opera"
       And image "image1" with location "-34.588363,-58.423254" and address "Urquiza"
+      Then operation is rejected with the message "Invalid Category!"
+
+  Scenario: update user's interests
+     Given user is already registered with mail "pepe@fi.uba.ar"
+      And default categories are in the database
+      When user updates their interests to "Games,Film"
+      Then the user's new interests are "Games,Film"
+
+  Scenario: update user's interests twice
+     Given user is already registered with mail "pepe@fi.uba.ar"
+      And default categories are in the database
+      When user updates their interests to "Games,Film"
+      When user updates their interests to "Film,Music"
+      Then the user's new interests are "Film,Music"
+
+  Scenario: update user's interests with an invalid category
+     Given user is already registered with mail "pepe@fi.uba.ar"
+      When user updates their interests to "Games,Worlds"
       Then operation is rejected with the message "Invalid Category!"
