@@ -13,6 +13,7 @@ from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import (
     AssociationHashtag as AssociationHashtagModel,  # pylint: disable=unused-import
 )
+from frux_app_server.models import Calification as CalificationModel
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
@@ -27,6 +28,7 @@ from .constants import State, states
 from .object import (
     Admin,
     AssociationHashtag,
+    Calification,
     Favorites,
     Investments,
     Project,
@@ -34,7 +36,13 @@ from .object import (
     User,
     Wallet,
 )
-from .utils import is_valid_email, is_valid_location, requires_auth, wei_to_eth
+from .utils import (
+    get_project,
+    is_valid_email,
+    is_valid_location,
+    requires_auth,
+    wei_to_eth,
+)
 
 
 class UserMutation(graphene.Mutation):
@@ -403,7 +411,7 @@ class UpdateProject(graphene.Mutation):
         deadline=None,
     ):
 
-        project = ProjectModel.query.get(id_project)
+        project = get_project(id_project)
         if info.context.user != project.owner:
             return Promise.reject(
                 GraphQLError('Invalid ownership. This user cannot modify this project')
@@ -453,10 +461,7 @@ class InvestProject(graphene.Mutation):
     @requires_auth
     def mutate(self, info, id_project, invested_amount):
 
-        query = db.session.query(ProjectModel).filter_by(id=id_project)
-        if query.count() != 1:
-            return Promise.reject(GraphQLError('No project found!'))
-        project = query.first()
+        project = get_project(id_project)
 
         if project.current_state != State.FUNDING:
             return Promise.reject(GraphQLError('The project is not in funding state!'))
@@ -531,10 +536,7 @@ class BlockProjectMutation(graphene.Mutation):
         self, info, id_project,
     ):  # pylint: disable=unused-argument
 
-        query = db.session.query(ProjectModel).filter_by(id=id_project)
-        if query.count() != 1:
-            return Promise.reject(GraphQLError('No project found!'))
-        project = query.first()
+        project = get_project(id_project)
 
         project.is_blocked = True
         db.session.commit()
@@ -551,10 +553,7 @@ class UnBlockProjectMutation(graphene.Mutation):
         self, info, id_project,
     ):  # pylint: disable=unused-argument
 
-        query = db.session.query(ProjectModel).filter_by(id=id_project)
-        if query.count() != 1:
-            return Promise.reject(GraphQLError('No project found!'))
-        project = query.first()
+        project = get_project(id_project)
 
         project.is_blocked = False
         db.session.commit()
@@ -571,10 +570,7 @@ class WithdrawFundsMutation(graphene.Mutation):
     @requires_auth
     def mutate(self, info, id_project, withdraw_amount=None):
 
-        query = db.session.query(ProjectModel).filter_by(id=id_project)
-        if query.count() != 1:
-            return Promise.reject(GraphQLError('No project found!'))
-        project = query.first()
+        project = get_project(id_project)
 
         if (
             project.current_state != State.FUNDING
@@ -675,10 +671,7 @@ class ProjectStageMutation(graphene.Mutation):
         self, info, id_project, title, description, goal
     ):  # pylint: disable=unused-argument
 
-        query = db.session.query(ProjectModel).filter_by(id=id_project)
-        if query.count() != 1:
-            return Promise.reject(GraphQLError('No project found!'))
-        project = query.first()
+        project = get_project(id_project)
 
         if info.context.user != project.owner:
             return Promise.reject(GraphQLError('User is not the project owner!'))
@@ -693,6 +686,34 @@ class ProjectStageMutation(graphene.Mutation):
         db.session.add(stage)
         db.session.commit()
         return stage
+
+
+class ReviewProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        review = graphene.String()
+        puntuation = graphene.Float()
+
+    Output = Calification
+
+    @requires_auth
+    def mutate(
+        self, info, id_project, review=None, puntuation=None
+    ):  # pylint: disable=unused-argument
+
+        project = get_project(id_project)
+
+        if puntuation is None:
+            calification = CalificationModel(review=review)
+        elif review is None:
+            calification = CalificationModel(puntuation=puntuation)
+        else:
+            calification = CalificationModel(puntuation=puntuation, review=review)
+        project.reviews.append(calification)
+        db.session.add(calification)
+        db.session.commit()
+
+        return calification
 
 
 class Mutation(graphene.ObjectType):
@@ -712,3 +733,4 @@ class Mutation(graphene.ObjectType):
     mutate_unfav_project = UnFavProject.Field()
     mutate_project_stage = ProjectStageMutation.Field()
     mutate_withdraw_funds = WithdrawFundsMutation.Field()
+    mutate_review_project = ReviewProjectMutation.Field()
