@@ -46,6 +46,15 @@ MUTATION_INVEST_PROJECT = '''
     }
 '''
 
+MUTATION_WITHDRAW_PROJECT = '''
+    mutation WithdrawFunds($idProject: Int!, $withdrawAmount: Float!) {
+        mutateWithdrawFunds(idProject: $idProject, withdrawAmount: $withdrawAmount) {
+            userId,
+            investedAmount
+        }
+    }
+'''
+
 QUERY_PROJECT_STATE = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
@@ -131,7 +140,7 @@ def step_impl(context, email):
     assert context.response.status_code == 200
 
     res = json.loads(context.response.data.decode())
-    context.project_goal = float(res['data']['mutateSeerProject']['goal'])
+    context.project_goal = int(res['data']['mutateSeerProject']['goal'])
 
 
 @then(u'the project state is "{state}"')
@@ -170,6 +179,12 @@ def step_impl(context, email, n):
     invested = min(context.project_goal, n)
     context.project_goal -= invested
 
+    if 'project_investments' not in context:
+        context.project_investments = {}
+    context.project_investments[email] = (
+        context.project_investments.get(email, 0) + invested
+    )
+
     mock_smart_contract_response(
         f'/project/{context.tx_hash}',
         {'value': {'hex': hex(invested * (10 ** 18))}},
@@ -202,3 +217,26 @@ def step_impl(context, invested_amount, investor_count):
     res = json.loads(context.response.data.decode())
     assert res['data']['project']['amountCollected'] == float(invested_amount)
     assert res['data']['project']['investorCount'] == int(investor_count)
+
+
+@when(u'user "{email}" withdraws {n}')
+@responses.activate
+def step_impl(context, email, n):
+    n = int(n)
+    if 'project_investments' not in context:
+        context.project_investments = {}
+    context.project_investments[email] = max(
+        context.project_investments.get(email, 0) - n, 0
+    )
+
+    mock_smart_contract_response(
+        f'/project/{context.tx_hash}/withdraw', {}, 200,
+    )
+
+    variables = {'idProject': context.last_project_id, 'withdrawAmount': n}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_WITHDRAW_PROJECT, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200

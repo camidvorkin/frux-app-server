@@ -43,3 +43,9 @@ def step_impl(context):
         for category in categories:
             context.db.session.add(Category(name=category))
         context.db.session.commit()
+
+
+@then(u'the request gives error message "{message}"')
+def step_impl(context, message):
+    res = json.loads(context.response.data.decode())
+    res['errors'][0]['message'] = message
