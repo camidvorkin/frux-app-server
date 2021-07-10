@@ -497,6 +497,9 @@ class InvestProject(graphene.Mutation):
             .filter(InvestmentsModel.project_id == id_project)
             .scalar()
         )
+        if not project_collected:
+            project_collected = 0
+
         if project.goal - project_collected <= invested_amount:
             project.current_state = State.IN_PROGRESS
             invested_amount = project.goal - project_collected

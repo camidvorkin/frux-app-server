@@ -97,9 +97,6 @@ def step_impl(context, hashtags):
         },
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
-    import pprint
-
-    pprint.pprint(context.response.data.decode())
 
 
 @then('the project has "{hashtags}" as hashtags')

@@ -31,7 +31,17 @@ MUTATION_SEER_PROJECT = '''
     mutation SeerProject($idProject: Int!) {
         mutateSeerProject(idProject: $idProject) {
             dbId,
-            currentState
+            currentState,
+            goal
+        }
+    }
+'''
+
+MUTATION_INVEST_PROJECT = '''
+    mutation InvestProject($idProject: Int!, $investedAmount: Float!) {
+        mutateInvestProject(idProject: $idProject, investedAmount: $investedAmount) {
+            userId,
+            investedAmount
         }
     }
 '''
@@ -39,7 +49,9 @@ MUTATION_SEER_PROJECT = '''
 QUERY_PROJECT_STATE = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
-            currentState
+            currentState,
+            investorCount,
+            amountCollected
         }
     }
 '''
@@ -102,9 +114,11 @@ def step_impl(context, email):
 
 
 @when(u'the owner of the project "{email}" enables the project for funding')
+@given(u'the owner of the project "{email}" enabled the project for funding')
 @responses.activate
 def step_impl(context, email):
-    mock_smart_contract_response('/project', {'txHash': str(uuid.uuid1())}, 200)
+    context.tx_hash = str(uuid.uuid1())
+    mock_smart_contract_response('/project', {'txHash': context.tx_hash}, 200)
 
     context.response = context.client.post(
         '/graphql',
@@ -115,6 +129,9 @@ def step_impl(context, email):
         headers={'Authorization': f'Bearer {email}'},
     )
     assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    context.project_goal = float(res['data']['mutateSeerProject']['goal'])
 
 
 @then(u'the project state is "{state}"')
@@ -144,3 +161,44 @@ def step_impl(context, email, n):
 
     res = json.loads(context.response.data.decode())
     assert len(res['data']['profile']['seerProjects']['edges']) == int(n)
+
+
+@when(u'user "{email}" invests {n}')
+@responses.activate
+def step_impl(context, email, n):
+    n = int(n)
+    invested = min(context.project_goal, n)
+    context.project_goal -= invested
+
+    mock_smart_contract_response(
+        f'/project/{context.tx_hash}',
+        {'value': {'hex': hex(invested * (10 ** 18))}},
+        200,
+    )
+
+    variables = {'idProject': context.last_project_id, 'investedAmount': n}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_INVEST_PROJECT, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+
+@then(
+    u'the project invested ammount is {invested_amount} and has {investor_count} investors'
+)
+def step_impl(context, invested_amount, investor_count):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_PROJECT_STATE,
+            'variables': json.dumps({'dbId': context.last_project_id}),
+        },
+        headers={'Authorization': f'Bearer {context.last_token}'},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert res['data']['project']['amountCollected'] == float(invested_amount)
+    assert res['data']['project']['investorCount'] == int(investor_count)
