@@ -537,7 +537,6 @@ class BlockProjectMutation(graphene.Mutation):
     ):  # pylint: disable=unused-argument
 
         project = get_project(id_project)
-
         project.is_blocked = True
         db.session.commit()
         return project
@@ -554,7 +553,6 @@ class UnBlockProjectMutation(graphene.Mutation):
     ):  # pylint: disable=unused-argument
 
         project = get_project(id_project)
-
         project.is_blocked = False
         db.session.commit()
         return project
@@ -571,7 +569,6 @@ class WithdrawFundsMutation(graphene.Mutation):
     def mutate(self, info, id_project, withdraw_amount=None):
 
         project = get_project(id_project)
-
         if (
             project.current_state != State.FUNDING
             and project.current_state != State.CANCELED
@@ -702,6 +699,16 @@ class ReviewProjectMutation(graphene.Mutation):
     ):  # pylint: disable=unused-argument
 
         project = get_project(id_project)
+
+        if (
+            db.session.query(InvestmentsModel)
+            .filter_by(project_id=id_project, user_id=info.context.user.id)
+            .count()
+            < 1
+        ):
+            return Promise.reject(
+                GraphQLError('Only investors of the project can add califications!')
+            )
 
         if puntuation is None:
             calification = CalificationModel(review=review)
