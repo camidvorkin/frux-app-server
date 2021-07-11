@@ -67,7 +67,7 @@ class Project(SQLAlchemyObjectType):
     amount_collected = graphene.Float()
     investor_count = graphene.Int()
     favorite_count = graphene.Int()
-    general_score = graphene.Int()
+    general_score = graphene.Float()
     review_count = graphene.Int()
 
     class Meta:

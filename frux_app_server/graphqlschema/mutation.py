@@ -719,12 +719,23 @@ class ReviewProjectMutation(graphene.Mutation):
                 GraphQLError('Only investors of the project can add reviews!')
             )
 
-        review = ReviewModel(score=score, description=description)
-        project.reviews.append(review)
-        db.session.add(review)
+        user_review = (
+            db.session.query(ReviewModel)
+            .filter_by(project_id=id_project, user_id=info.context.user.id)
+            .first()
+        )
+        if not user_review:
+            user_review = ReviewModel(score=score, description=description)
+            project.reviews.append(user_review)
+            info.context.user.reviews.append(user_review)
+            db.session.add(user_review)
+        else:
+            user_review.score = score
+            user_review.description = description
+
         db.session.commit()
 
-        return review
+        return user_review
 
 
 class Mutation(graphene.ObjectType):

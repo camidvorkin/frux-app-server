@@ -26,3 +26,12 @@ Feature: reviews
     Given the owner of the project "johndoe@gmail.com" enabled the project for funding
     When user "peterdoe@gmail.com" reviews the project with score 4.5 and description "This is the best project ever!"
     Then operation is rejected with the message "Only investors of the project can add reviews!"
+
+  Scenario: a user who already reviewed the project can update their review
+    Given the owner of the project "johndoe@gmail.com" enabled the project for funding
+    And user "peterdoe@gmail.com" invested 120
+    And user "carldoe@gmail.com" invested 120
+    When user "peterdoe@gmail.com" reviews the project with score 4.5 and description "This is the best project ever!"
+    And user "peterdoe@gmail.com" reviews the project with score 1.5 and description "I'm very disappointed..."
+    And the project's reviews are listed
+    Then the project has 1 reviews and a general score of 1.5
