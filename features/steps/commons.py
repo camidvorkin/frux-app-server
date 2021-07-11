@@ -6,17 +6,17 @@ from frux_app_server.models import Admin, Category
 
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
-ADMIN_TOKEN = 'AdminTestAuthToken'
-
 
 @then('operation is rejected with the message "{message}"')
 def step_impl(context, message):
     res = json.loads(context.response.data.decode())
+    print(res)
     assert res['errors'][0]['message'] == message
 
 
-def authenticate_user(context, email, token=ADMIN_TOKEN):
+def authenticate_user(context, email, token):
     admin = Admin(email=email, token=token)
+    context.last_token = email
     with context.app.app_context():
         context.db.session.add(admin)
         context.db.session.commit()
@@ -24,7 +24,7 @@ def authenticate_user(context, email, token=ADMIN_TOKEN):
 
 @given('user with mail "{email}" is authenticated')
 def step_impl(context, email):
-    authenticate_user(context, email, ADMIN_TOKEN)
+    authenticate_user(context, email, email)
 
 
 @given('default categories are in the database')

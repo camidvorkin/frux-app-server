@@ -1,12 +1,10 @@
 import json
 import os
 import re
-import threading
 
 import requests
 import sqlalchemy
 from firebase_admin import auth
-from flask import current_app
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 from graphql import GraphQLError
 from promise import Promise
@@ -31,33 +29,24 @@ def is_valid_location(latitude, longitude):
     )
 
 
-class RequestUserWallet(threading.Thread):
-    def __init__(self, user_id, app):
-        threading.Thread.__init__(self)
-        self.user_id = user_id
-        self.app = app
-
-    def run(self):
-        try:
-            r = requests.post(
-                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet"
-            )
-        except requests.ConnectionError:
-            return
-
-        if r.status_code != 200:
-            return
-
-        response_json = json.loads(r.content.decode())
-        wallet = WalletModel(
-            internal_id=response_json["id"], address=response_json["address"]
+def request_user_wallet(user):
+    try:
+        r = requests.post(
+            f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet"
         )
+    except requests.ConnectionError:
+        return
 
-        with self.app:
-            db.session.add(wallet)
-            user = UserModel.query.get(self.user_id)
-            user.wallet_address = wallet.address
-            db.session.commit()
+    if r.status_code != 200:
+        return
+
+    response_json = json.loads(r.content.decode())
+    wallet = WalletModel(
+        internal_id=response_json["id"], address=response_json["address"]
+    )
+
+    db.session.add(wallet)
+    user.wallet_address = wallet.address
 
 
 def requires_auth(func):
@@ -97,7 +86,8 @@ def requires_auth(func):
             db.session.commit()
 
         if not info.context.user.wallet_address:
-            RequestUserWallet(info.context.user.id, current_app.app_context()).start()
+            request_user_wallet(info.context.user)
+            db.session.commit()
 
         return func(obj, info, **kwargs)
 

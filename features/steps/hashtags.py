@@ -4,8 +4,6 @@ from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
-ADMIN_TOKEN = 'AdminTestAuthToken'
-
 QUERY_ALL_HASHTAGS = '''
 {
     allHashtags {
@@ -67,7 +65,7 @@ def step_impl(context, hashtags):
             'query': MUTATION_NEW_PROJECT_WITH_HASHTAGS,
             'variables': json.dumps(variables),
         },
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
     context.last_project_id = json.loads(context.response.data.decode())['data'][
         'mutateProject'
@@ -97,11 +95,8 @@ def step_impl(context, hashtags):
             'query': MUTATION_UPDATE_PROJECT_WITH_HASHTAGS,
             'variables': json.dumps(variables),
         },
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
-    import pprint
-
-    pprint.pprint(context.response.data.decode())
 
 
 @then('the project has "{hashtags}" as hashtags')
@@ -112,7 +107,7 @@ def step_impl(context, hashtags):
     context.response = context.client.post(
         '/graphql',
         json={'query': QUERY_GET_PROJECT_HASHTAGS, 'variables': json.dumps(variables)},
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
 
     res = json.loads(context.response.data.decode())

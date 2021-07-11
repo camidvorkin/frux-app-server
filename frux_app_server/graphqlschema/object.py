@@ -5,13 +5,13 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
-from frux_app_server.models import Calification as CalificationModel
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
+from frux_app_server.models import Review as ReviewModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 
@@ -67,6 +67,8 @@ class Project(SQLAlchemyObjectType):
     amount_collected = graphene.Float()
     investor_count = graphene.Int()
     favorite_count = graphene.Int()
+    general_score = graphene.Float()
+    review_count = graphene.Int()
 
     class Meta:
         description = 'Registered projects'
@@ -85,6 +87,16 @@ class Project(SQLAlchemyObjectType):
 
     def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
         return len(self.favorites_from)
+
+    def resolve_general_score(self, info):  # pylint: disable=unused-argument
+        if len(self.reviews) == 0:
+            return 0
+        return functools.reduce(
+            lambda a, b: a + b, [r.score for r in self.reviews]
+        ) / len(self.reviews)
+
+    def resolve_review_count(self, info):  # pylint: disable=unused-argument
+        return len(self.reviews)
 
 
 class ProjectConnections(graphene.Connection):
@@ -148,8 +160,8 @@ class AssociationHashtag(SQLAlchemyObjectType):
         interfaces = (graphene.relay.Node,)
 
 
-class Calification(SQLAlchemyObjectType):
+class Review(SQLAlchemyObjectType):
     class Meta:
-        description = 'Puntuation and review of a project'
-        model = CalificationModel
+        description = 'Review of a project'
+        model = ReviewModel
         interfaces = (graphene.relay.Node,)

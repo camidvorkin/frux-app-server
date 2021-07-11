@@ -5,7 +5,6 @@ from commons import authenticate_user
 
 from frux_app_server.models import User
 
-ADMIN_TOKEN = 'AdminTestAuthToken'
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
 QUERY_ALL_USERS = '''
@@ -56,6 +55,38 @@ MUTATION_UPDATE_USER = '''
             username,
             email,
             dbId
+        }
+    }
+'''
+
+MUTATION_UPDATE_USER_LOCATION = '''
+    mutation UpdateUser($latitude: String!, $longitude: String!) {
+        mutateUpdateUser(latitude: $latitude, longitude: $longitude) {
+            latitude,
+            longitude
+        }
+    }
+'''
+
+MUTATION_UPDATE_USER_INTERESTS = '''
+    mutation UpdateUser($interests: [String!]!) {
+        mutateUpdateUser(interests: $interests) {
+            interests {
+                edges {
+                    node {
+                        name
+                    }
+                }
+            }
+        }
+    }
+'''
+
+MUTATION_SET_SEER = '''
+    mutation {
+        mutateSetSeer {
+            email,
+            isSeer
         }
     }
 '''
@@ -128,6 +159,7 @@ def step_impl(context, email):
         latitude="00.0000",
         longitude="00.0000",
     )
+    authenticate_user(context, email, email)
     with context.app.app_context():
         context.db.session.add(user)
         context.db.session.commit()
@@ -149,11 +181,10 @@ def step_impl(context, email):
     assert res['data']['user']['email'] == email
 
 
-@when('user update their username to "{username}" and their image to "{image_path}"')
+@when('user updates their username to "{username}" and their image to "{image_path}"')
 def step_impl(context, username, image_path):
     updated_variables['username'] = username
     updated_variables['imagePath'] = image_path
-    authenticate_user(context, image_path, ADMIN_TOKEN)
 
     context.response = context.client.post(
         '/graphql',
@@ -161,20 +192,22 @@ def step_impl(context, username, image_path):
             'query': MUTATION_UPDATE_USER,
             'variables': json.dumps(updated_variables),
         },
-        headers={'Authorization': f'Bearer {ADMIN_TOKEN}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
 
 
-@then('the user\'s information change')
-def step_impl(context):
+@then(
+    'the user\'s username changes to "{username}" and their image changes to "{image_path}"'
+)
+def step_impl(context, username, image_path):
     # Get updated project
     context.response = context.client.post(
         '/graphql',
-        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 2})},
+        json={'query': QUERY_SINGLE_USER, 'variables': json.dumps({'dbId': 1})},
     )
     res = json.loads(context.response.data.decode())
-    assert res['data']['user']['username'] == updated_variables['username']
-    assert res['data']['user']['imagePath'] == updated_variables['imagePath']
+    assert res['data']['user']['username'] == username
+    assert res['data']['user']['imagePath'] == image_path
 
 
 @then(u'user already registered with description "" and no role')
@@ -193,3 +226,64 @@ def step_impl(context):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
     assert res['data']['mutateUser']['email'] == variables['email']
+
+
+@given(u'user with mail "{email}" has a seer role')
+def step_impl(context, email):
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_SET_SEER, 'variables': json.dumps({'dbId': 1})},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert res['data']['mutateSetSeer']['isSeer']
+
+
+@when(u'user updates their latitude to "{latitude}" and longitude to "{longitude}"')
+def step_impl(context, latitude, longitude):
+    updated_variables['latitude'] = latitude
+    updated_variables['longitude'] = longitude
+
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': MUTATION_UPDATE_USER_LOCATION,
+            'variables': json.dumps(updated_variables),
+        },
+        headers={'Authorization': f'Bearer {context.last_token}'},
+    )
+
+
+@then(u'the user\'s latitude changes to "{latitude}" and longitude to "{longitude}"')
+def step_impl(context, latitude, longitude):
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+    assert res['data']['mutateUpdateUser']['latitude'] == latitude
+    assert res['data']['mutateUpdateUser']['longitude'] == longitude
+
+
+@when(u'user updates their interests to "{interests}"')
+def step_impl(context, interests):
+    mutation_variables = {'interests': interests.split(',')}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_UPDATE_USER_INTERESTS, 'variables': mutation_variables},
+        headers={'Authorization': f'Bearer {context.last_token}'},
+    )
+
+
+@then(u'the user\'s new interests are "{interests}"')
+def step_impl(context, interests):
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+
+    for h in res['data']['mutateUpdateUser']['interests']['edges']:
+        assert h['node']['name'] in interests.split(',')
+
+    assert len(res['data']['mutateUpdateUser']['interests']['edges']) == len(
+        interests.split(',')
+    )

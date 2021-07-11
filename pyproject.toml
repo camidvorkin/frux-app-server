@@ -31,6 +31,7 @@ firebase-admin = "^5.0.0"
 python-dotenv = "^0.17.1"
 datadog = "^0.41.0"
 graphene-sqlalchemy-filter = "^1.12.2"
+responses = "^0.13.3"
 
 [tool.poetry.dev-dependencies]
 nox = "^2020.8.22"

@@ -13,13 +13,13 @@ from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import (
     AssociationHashtag as AssociationHashtagModel,  # pylint: disable=unused-import
 )
-from frux_app_server.models import Calification as CalificationModel
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
+from frux_app_server.models import Review as ReviewModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
@@ -28,11 +28,11 @@ from .constants import State, states
 from .object import (
     Admin,
     AssociationHashtag,
-    Calification,
     Favorites,
     Investments,
     Project,
     ProjectStage,
+    Review,
     User,
     Wallet,
 )
@@ -309,7 +309,7 @@ class ProjectMutation(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
         description = graphene.String(required=True)
-        goal = graphene.Int(required=True)
+        goal = graphene.Int()
         hashtags = graphene.List(graphene.String)
         category = graphene.String()
         latitude = graphene.String()
@@ -333,7 +333,7 @@ class ProjectMutation(graphene.Mutation):
         longitude="0.0",
         current_state=(State.CREATED.value),
         uri_image="",
-    ):
+    ):  # pylint: disable=unused-argument
         if not hashtags:
             hashtags = []
 
@@ -356,7 +356,7 @@ class ProjectMutation(graphene.Mutation):
         project = ProjectModel(
             name=name,
             description=description,
-            goal=goal,
+            goal=0,
             owner=info.context.user,
             category_name=category,
             latitude=latitude,
@@ -502,6 +502,9 @@ class InvestProject(graphene.Mutation):
             .filter(InvestmentsModel.project_id == id_project)
             .scalar()
         )
+        if not project_collected:
+            project_collected = 0
+
         if project.goal - project_collected <= invested_amount:
             project.current_state = State.IN_PROGRESS
             invested_amount = project.goal - project_collected
@@ -680,6 +683,12 @@ class ProjectStageMutation(graphene.Mutation):
         project = ProjectModel.query.get(id_project)
         project.stages.append(stage)
 
+        new_goal = 0
+        for stage in project.stages:
+            new_goal += stage.goal
+
+        project.goal = new_goal
+
         db.session.add(stage)
         db.session.commit()
         return stage
@@ -688,14 +697,14 @@ class ProjectStageMutation(graphene.Mutation):
 class ReviewProjectMutation(graphene.Mutation):
     class Arguments:
         id_project = graphene.Int(required=True)
-        review = graphene.String()
-        puntuation = graphene.Float()
+        score = graphene.Float(required=True)
+        description = graphene.String()
 
-    Output = Calification
+    Output = Review
 
     @requires_auth
     def mutate(
-        self, info, id_project, review=None, puntuation=None
+        self, info, id_project, score, description=None
     ):  # pylint: disable=unused-argument
 
         project = get_project(id_project)
@@ -707,20 +716,26 @@ class ReviewProjectMutation(graphene.Mutation):
             < 1
         ):
             return Promise.reject(
-                GraphQLError('Only investors of the project can add califications!')
+                GraphQLError('Only investors of the project can add reviews!')
             )
 
-        if puntuation is None:
-            calification = CalificationModel(review=review)
-        elif review is None:
-            calification = CalificationModel(puntuation=puntuation)
+        user_review = (
+            db.session.query(ReviewModel)
+            .filter_by(project_id=id_project, user_id=info.context.user.id)
+            .first()
+        )
+        if not user_review:
+            user_review = ReviewModel(score=score, description=description)
+            project.reviews.append(user_review)
+            info.context.user.reviews.append(user_review)
+            db.session.add(user_review)
         else:
-            calification = CalificationModel(puntuation=puntuation, review=review)
-        project.reviews.append(calification)
-        db.session.add(calification)
+            user_review.score = score
+            user_review.description = description
+
         db.session.commit()
 
-        return calification
+        return user_review
 
 
 class Mutation(graphene.ObjectType):
