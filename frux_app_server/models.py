@@ -56,6 +56,7 @@ class User(db.Model):  # type:ignore
     favorited_projects = db.relationship("Favorites", back_populates="user")
     wallet_address = db.Column(db.String, db.ForeignKey('wallet.address'))
     wallet = db.relationship("Wallet", back_populates="user")
+    reviews = db.relationship("Review", back_populates="user")
 
 
 class AssociationHashtag(db.Model):  # type:ignore
@@ -87,13 +88,15 @@ class Category(db.Model):  # type:ignore
     description = db.Column(db.String)
 
 
-class Calification(db.Model):  # type:ignore
-    __tablename__ = 'calification'
+class Review(db.Model):  # type:ignore
+    __tablename__ = 'review'
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
     project = db.relationship('Project', back_populates="reviews")
-    puntuation = db.Column(db.Float)
-    review = db.Column(db.String)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    user = db.relationship('User', back_populates="reviews")
+    score = db.Column(db.Float)
+    description = db.Column(db.String)
 
 
 class Project(db.Model):  # type:ignore
@@ -123,7 +126,7 @@ class Project(db.Model):  # type:ignore
     is_blocked = db.Column(db.Boolean, default=False)
     creation_date = db.Column(db.DateTime)
     deadline = db.Column(db.DateTime)
-    reviews = db.relationship(Calification, back_populates="project")
+    reviews = db.relationship(Review, back_populates="project")
 
 
 class Admin(db.Model):  # type:ignore

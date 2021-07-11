@@ -172,6 +172,7 @@ def step_impl(context, email, n):
     assert len(res['data']['profile']['seerProjects']['edges']) == int(n)
 
 
+@given(u'user "{email}" invested {n}')
 @when(u'user "{email}" invests {n}')
 @responses.activate
 def step_impl(context, email, n):

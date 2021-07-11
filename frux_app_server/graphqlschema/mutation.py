@@ -13,13 +13,13 @@ from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import (
     AssociationHashtag as AssociationHashtagModel,  # pylint: disable=unused-import
 )
-from frux_app_server.models import Calification as CalificationModel
 from frux_app_server.models import Category as CategoryModel
 from frux_app_server.models import Favorites as FavoritesModel
 from frux_app_server.models import Hashtag as HashtagModel
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import ProjectStage as ProjectStageModel
+from frux_app_server.models import Review as ReviewModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
@@ -28,11 +28,11 @@ from .constants import State, states
 from .object import (
     Admin,
     AssociationHashtag,
-    Calification,
     Favorites,
     Investments,
     Project,
     ProjectStage,
+    Review,
     User,
     Wallet,
 )
@@ -697,14 +697,14 @@ class ProjectStageMutation(graphene.Mutation):
 class ReviewProjectMutation(graphene.Mutation):
     class Arguments:
         id_project = graphene.Int(required=True)
-        review = graphene.String()
-        puntuation = graphene.Float()
+        score = graphene.Float(required=True)
+        description = graphene.String()
 
-    Output = Calification
+    Output = Review
 
     @requires_auth
     def mutate(
-        self, info, id_project, review=None, puntuation=None
+        self, info, id_project, score, description=None
     ):  # pylint: disable=unused-argument
 
         project = get_project(id_project)
@@ -716,20 +716,15 @@ class ReviewProjectMutation(graphene.Mutation):
             < 1
         ):
             return Promise.reject(
-                GraphQLError('Only investors of the project can add califications!')
+                GraphQLError('Only investors of the project can add reviews!')
             )
 
-        if puntuation is None:
-            calification = CalificationModel(review=review)
-        elif review is None:
-            calification = CalificationModel(puntuation=puntuation)
-        else:
-            calification = CalificationModel(puntuation=puntuation, review=review)
-        project.reviews.append(calification)
-        db.session.add(calification)
+        review = ReviewModel(score=score, description=description)
+        project.reviews.append(review)
+        db.session.add(review)
         db.session.commit()
 
-        return calification
+        return review
 
 
 class Mutation(graphene.ObjectType):
