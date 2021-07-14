@@ -1,7 +1,12 @@
 import functools
+import json
+import os
 
 import graphene
+import requests
 from graphene_sqlalchemy import SQLAlchemyObjectType
+from graphql import GraphQLError
+from promise import Promise
 
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
@@ -147,10 +152,28 @@ class Category(SQLAlchemyObjectType):
 
 
 class Wallet(SQLAlchemyObjectType):
+    balance = graphene.Float()
+
     class Meta:
         description = 'A wallet given to a user'
         model = WalletModel
         interfaces = (graphene.relay.Node,)
+
+    def resolve_balance(self, info):  # pylint: disable=unused-argument
+        try:
+            r = requests.get(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet/{self.internal_id}/balance",
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request wallet! Payments service is down!')
+            )
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
+            )
+        response_json = json.loads(r.content.decode())
+        return response_json["balance"]
 
 
 class AssociationHashtag(SQLAlchemyObjectType):
