@@ -24,6 +24,7 @@ from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
 
+from ..services import datadog_client
 from .constants import State, states
 from .object import (
     Admin,
@@ -195,6 +196,7 @@ class BlockUserMutation(graphene.Mutation):
         user = query.first()
         user.is_blocked = True
         db.session.commit()
+        datadog_client.new_blocked_user()
         return user
 
 
@@ -212,6 +214,7 @@ class UnBlockUserMutation(graphene.Mutation):
         user = query.first()
         user.is_blocked = False
         db.session.commit()
+        datadog_client.new_unblocked_user()
         return user
 
 

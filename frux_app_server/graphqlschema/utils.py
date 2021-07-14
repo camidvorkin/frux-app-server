@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import time
 
 import requests
 import sqlalchemy
@@ -14,6 +15,8 @@ from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
+
+from ..services import datadog_client
 
 
 def is_valid_email(email):
@@ -64,9 +67,14 @@ def requires_auth(func):
         try:
             token = info.context.headers['Authorization'].split()[-1]
             userinfo = AdminModel.query.get(token)
+            provider = None
             if not userinfo:
                 userinfo = auth.verify_id_token(token)
                 user_email = userinfo['email']
+                provider = userinfo['firebase']['sign_in_provider']
+                auth_time = userinfo['auth_time']
+                if time.time() - auth_time < 60:
+                    datadog_client.new_login(provider)
             else:
                 user_email = userinfo.email
         except auth.ExpiredIdTokenError as e:
@@ -84,6 +92,8 @@ def requires_auth(func):
             info.context.user = UserModel(email=user_email)
             db.session.add(info.context.user)
             db.session.commit()
+            if provider:
+                datadog_client.new_user(provider)
 
         if not info.context.user.wallet_address:
             request_user_wallet(info.context.user)
