@@ -28,4 +28,4 @@ def new_blocked_user():
 
 
 def new_unblocked_user():
-    statsd.increment('frux-app-server.new-blocked-user', tags=[ENVIRON])
+    statsd.increment('frux-app-server.new-unblocked-user', tags=[ENVIRON])
