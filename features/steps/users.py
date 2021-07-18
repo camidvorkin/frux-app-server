@@ -86,10 +86,7 @@ MUTATION_SET_SEER = '''
     mutation {
         mutateSetSeer {
             email,
-            isSeer,
-            wallet {
-                internalId
-            }
+            isSeer
         }
     }
 '''

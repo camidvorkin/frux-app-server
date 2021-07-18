@@ -1,5 +1,6 @@
 import json
 
+import responses
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from commons import mock_smart_contract_response
 
@@ -70,9 +71,10 @@ def step_impl(context):
 
 
 @when(u'the seer {email} complete the stage {n}')
+@responses.activate
 def step_impl(context, email, n):
     mock_smart_contract_response(
-        f'/project/{context.tx_hash}/stage/{n}',
+        f'/project/{context.tx_hash}/stageId/{n}',
         {'reviewerId': context.seer_internal_id},
         200,
     )
