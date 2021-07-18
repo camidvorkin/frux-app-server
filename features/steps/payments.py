@@ -32,7 +32,12 @@ MUTATION_SEER_PROJECT = '''
         mutateSeerProject(idProject: $idProject) {
             dbId,
             currentState,
-            goal
+            goal,
+            seer {
+               wallet{
+                    internalId
+                }
+            }
         }
     }
 '''
@@ -133,9 +138,11 @@ def step_impl(context, email):
         headers={'Authorization': f'Bearer {email}'},
     )
     assert context.response.status_code == 200
-
     res = json.loads(context.response.data.decode())
     context.project_goal = int(res['data']['mutateSeerProject']['goal'])
+    context.seer_internal_id = res['data']['mutateSeerProject']['seer']['wallet'][
+        'internalId'
+    ]
 
 
 @then(u'the project state is "{state}"')

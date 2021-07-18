@@ -227,9 +227,18 @@ class CompleteStageMutation(graphene.Mutation):
 
         body = {"reviewerId": info.context.user.wallet.internal_id}
         stage_index = stage.stage_index
-        request_post(
+        r = request_post(
             f"/project/{project.smart_contract_hash}/stageId/{stage_index}", body
         )
+        if r.status_code != 200:
+            error = json.loads(r.text)
+            if error['code'] == 'INSUFFICIENT_FUNDS':
+                return Promise.reject(
+                    GraphQLError('Unable to release funds! Insufficient funds!')
+                )
+            return Promise.reject(
+                GraphQLError(f'Unable to release funds! {r.status_code} - {r.text}')
+            )
 
         for stage in sorted(project.stages, key=lambda x: x.creation_date):
             if stage.stage_index > stage_index:

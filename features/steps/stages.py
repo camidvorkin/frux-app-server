@@ -1,6 +1,6 @@
 import json
-import uuid
 
+import responses
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from commons import mock_smart_contract_response
 
@@ -71,19 +71,23 @@ def step_impl(context):
 
 
 @when(u'the seer {email} complete the stage {n}')
+@responses.activate
 def step_impl(context, email, n):
-    context.tx_hash = str(uuid.uuid1())
     mock_smart_contract_response(
-        f'/project/{context.tx_hash}/stage/{n}', {'reviewerId': str(uuid.uuid1())}, 200
+        f'/project/{context.tx_hash}/stageId/{n}',
+        {'reviewerId': context.seer_internal_id},
+        200,
     )
-
     variables = {'idProject': context.last_project_id, 'idStage': n}
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_COMPLETE_STAGE, 'variables': json.dumps(variables)},
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
-    assert context.response.status_code == 200
+    if json.loads(context.response.data.decode())['data']['mutateCompleteStage']:
+        context.last_project_id = json.loads(context.response.data.decode())['data'][
+            'mutateCompleteStage'
+        ]['dbId']
 
 
 @then(u'stages are complete up to stage {n}')
