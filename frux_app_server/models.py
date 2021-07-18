@@ -77,9 +77,12 @@ class ProjectStage(db.Model):  # type:ignore
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
     project = db.relationship('Project', back_populates="stages")
+    stage_index = db.Column(db.Integer)
     title = db.Column(db.String)
     description = db.Column(db.String)
     goal = db.Column(db.Float)
+    creation_date = db.Column(db.DateTime)
+    funds_released = db.Column(db.Boolean, default=False)
 
 
 class Category(db.Model):  # type:ignore

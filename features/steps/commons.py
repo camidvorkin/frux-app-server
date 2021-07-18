@@ -1,5 +1,7 @@
 import json
+import os
 
+import responses
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 
 from frux_app_server.models import Admin, Category
@@ -44,3 +46,8 @@ def step_impl(context):
         for category in categories:
             context.db.session.add(Category(name=category))
         context.db.session.commit()
+
+
+def mock_smart_contract_response(path, content, status_code, verb=responses.POST):
+    url = os.environ.get('FRUX_SC_URL', 'http://localhost:3000')
+    responses.add(verb, url + path, body=json.dumps(content), status=status_code)

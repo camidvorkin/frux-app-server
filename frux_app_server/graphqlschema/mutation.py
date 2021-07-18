@@ -258,7 +258,10 @@ class SeerProjectMutation(graphene.Mutation):
         # Create wallet to project
         stages_cost = []
         new_goal = 0
-        for stage in project.stages:
+        for index, stage in enumerate(
+            sorted(project.stages, key=lambda x: x.creation_date), 1
+        ):
+            stage.stage_index = index
             stages_cost.append(stage.goal)
             new_goal += stage.goal
         body = {
@@ -511,6 +514,8 @@ class InvestProject(graphene.Mutation):
         if project.goal - project_collected <= invested_amount:
             project.current_state = State.IN_PROGRESS
             invested_amount = project.goal - project_collected
+            first_stage = sorted(project.stages, key=lambda x: x.stage_index)[0]
+            first_stage.funds_released = True
 
         q = InvestmentsModel.query.filter_by(
             user_id=info.context.user.id, project_id=id_project
@@ -680,7 +685,11 @@ class ProjectStageMutation(graphene.Mutation):
             return Promise.reject(GraphQLError('User is not the project owner!'))
 
         stage = ProjectStageModel(
-            title=title, project_id=id_project, description=description, goal=goal,
+            title=title,
+            project_id=id_project,
+            description=description,
+            goal=goal,
+            creation_date=datetime.datetime.utcnow(),
         )
 
         project = ProjectModel.query.get(id_project)
@@ -741,6 +750,59 @@ class ReviewProjectMutation(graphene.Mutation):
         return user_review
 
 
+class CompleteStageMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        id_stage = graphene.Int()
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project, id_stage=None
+    ):  # pylint: disable=unused-argument
+
+        project = get_project(id_project)
+        if project.seer.id != info.context.user.id:
+            return Promise.reject(
+                GraphQLError('This user is not the seer of the project!')
+            )
+
+        max_stage = len(project.stages)
+        if id_stage is None or id_stage > max_stage:
+            id_stage = max_stage
+
+        stage = (
+            db.session.query(ProjectStageModel)
+            .filter_by(project_id=id_project, stage_index=id_stage)
+            .one()
+        )
+        if stage.funds_released:
+            return Promise.reject(GraphQLError('This stage was already released!'))
+
+        body = {"reviewerId": info.context.user.wallet.internal_id}
+        stage_index = stage.stage_index + 1
+        try:
+            r = requests.post(
+                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project/{project.smart_contract_hash}/stageId/{stage_index}",
+                json=body,
+            )
+        except requests.ConnectionError:
+            return Promise.reject(
+                GraphQLError('Unable to request project! Payments service is down!')
+            )
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to release funds. {r.status_code} - {r.text}')
+            )
+
+        for i in range(id_stage):
+            project.stages[i].funds_released = True
+        db.session.commit()
+
+        return project
+
+
 class Mutation(graphene.ObjectType):
     mutate_user = UserMutation.Field()
     mutate_project = ProjectMutation.Field()
@@ -759,3 +821,4 @@ class Mutation(graphene.ObjectType):
     mutate_project_stage = ProjectStageMutation.Field()
     mutate_withdraw_funds = WithdrawFundsMutation.Field()
     mutate_review_project = ReviewProjectMutation.Field()
+    mutate_complete_stage = CompleteStageMutation.Field()
