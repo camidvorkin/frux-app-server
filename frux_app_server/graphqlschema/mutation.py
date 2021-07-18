@@ -791,7 +791,6 @@ class CompleteStageMutation(graphene.Mutation):
             return Promise.reject(
                 GraphQLError('Unable to request project! Payments service is down!')
             )
-
         for stage in sorted(project.stages, key=lambda x: x.creation_date):
             if stage.stage_index > stage_index:
                 break

@@ -1,5 +1,4 @@
 import json
-import uuid
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from commons import mock_smart_contract_response
@@ -72,13 +71,11 @@ def step_impl(context):
 
 @when(u'the seer {email} complete the stage {n}')
 def step_impl(context, email, n):
-    context.tx_hash = str(uuid.uuid1())
     mock_smart_contract_response(
         f'/project/{context.tx_hash}/stage/{n}',
         {'reviewerId': context.seer_internal_id},
         200,
     )
-
     variables = {'idProject': context.last_project_id, 'idStage': n}
     context.response = context.client.post(
         '/graphql',
