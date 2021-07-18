@@ -1,0 +1,304 @@
+import datetime
+import json
+
+import graphene
+from graphql import GraphQLError
+from promise import Promise
+
+from frux_app_server.graphqlschema.constants import State, states
+from frux_app_server.graphqlschema.object import Project
+from frux_app_server.graphqlschema.utils import (
+    get_project_stage,
+    get_seer,
+    request_post,
+    requires_auth,
+)
+from frux_app_server.graphqlschema.validations import (
+    has_seer,
+    is_category_invalid,
+    is_location_valid,
+)
+from frux_app_server.models import Project as ProjectModel
+from frux_app_server.models import db
+
+from .hashtag import add_hashtags, delete_hashtags
+
+
+def get_project(project_id):
+    return db.session.query(ProjectModel).filter_by(id=project_id).one()
+
+
+def is_project_invalid(project_id):
+    return db.session.query(ProjectModel).filter_by(id=project_id).count() != 1
+
+
+class ProjectMutation(graphene.Mutation):
+    class Arguments:
+        name = graphene.String(required=True)
+        description = graphene.String(required=True)
+        goal = graphene.Int()
+        hashtags = graphene.List(graphene.String)
+        category = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
+        uri_image = graphene.String()
+        deadline = graphene.String(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self,
+        info,
+        name,
+        description,
+        deadline,
+        goal=0,
+        hashtags=None,
+        category=None,
+        latitude="0.0",
+        longitude="0.0",
+        current_state=(State.CREATED.value),
+        uri_image="",
+    ):  # pylint: disable=unused-argument
+        if not hashtags:
+            hashtags = []
+
+        if is_category_invalid(category):
+            return Promise.reject(GraphQLError('Invalid Category!'))
+
+        if current_state not in states:
+            return Promise.reject(
+                GraphQLError('Invalid Stage! Try with:' + ",".join(states))
+            )
+
+        deadline = deadline.split("-")
+        deadline = datetime.datetime(
+            int(deadline[0]), int(deadline[1]), int(deadline[2])
+        )
+
+        project = ProjectModel(
+            name=name,
+            description=description,
+            goal=0,
+            owner=info.context.user,
+            category_name=category,
+            latitude=latitude,
+            longitude=longitude,
+            deadline=deadline,
+            creation_date=datetime.datetime.utcnow(),
+            current_state=State.CREATED,
+            uri_image=uri_image,
+            has_seer=False,
+            is_blocked=False,
+        )
+        db.session.add(project)
+        db.session.commit()
+        add_hashtags(hashtags, project.id)
+
+        return project
+
+
+class UpdateProject(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        name = graphene.String()
+        description = graphene.String()
+        hashtags = graphene.List(graphene.String)
+        category = graphene.String()
+        latitude = graphene.String()
+        longitude = graphene.String()
+        uri_image = graphene.String()
+        deadline = graphene.String()
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self,
+        info,
+        id_project,
+        name=None,
+        description=None,
+        hashtags=None,
+        category=None,
+        latitude=None,
+        longitude=None,
+        uri_image=None,
+        deadline=None,
+    ):
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+        if info.context.user != project.owner:
+            return Promise.reject(
+                GraphQLError('Invalid ownership. This user cannot modify this project')
+            )
+
+        if name:
+            project.name = name
+        if description:
+            project.description = description
+
+        if hashtags is not None:
+            delete_hashtags(id_project)
+            add_hashtags(hashtags, id_project)
+
+        if category is not None:
+            if is_category_invalid(category):
+                return Promise.reject(GraphQLError('Invalid Category!'))
+            project.category_name = category
+
+        if latitude and longitude and is_location_valid(latitude, longitude):
+            project.latitude = latitude
+            project.longitude = longitude
+        if uri_image:
+            project.uri_image = uri_image
+        if deadline:
+            project.deadline = deadline
+
+        db.session.commit()
+        return project
+
+
+class BlockProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+        project.is_blocked = True
+        db.session.commit()
+        return project
+
+
+class UnBlockProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+        project.is_blocked = False
+        db.session.commit()
+        return project
+
+
+class CompleteStageMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+        id_stage = graphene.Int()
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project, id_stage=None
+    ):  # pylint: disable=unused-argument
+
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+        if project.seer.id != info.context.user.id:
+            return Promise.reject(
+                GraphQLError('This user is not the seer of the project!')
+            )
+
+        max_stage = len(project.stages)
+        if id_stage is None or id_stage > max_stage:
+            id_stage = max_stage
+
+        stage = get_project_stage(id_project, id_stage)
+        if stage.funds_released:
+            return Promise.reject(GraphQLError('This stage was already released!'))
+
+        body = {"reviewerId": info.context.user.wallet.internal_id}
+        stage_index = stage.stage_index
+        request_post(
+            f"/project/{project.smart_contract_hash}/stageId/{stage_index}", body
+        )
+
+        for stage in sorted(project.stages, key=lambda x: x.creation_date):
+            if stage.stage_index > stage_index:
+                break
+            stage.funds_released = True
+        db.session.commit()
+
+        return project
+
+
+class SeerProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(
+        self, info, id_project,
+    ):  # pylint: disable=unused-argument
+        user = info.context.user
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+
+        if user.id != project.user_id:
+            return Promise.reject(
+                GraphQLError('This user is not the owner of the project!')
+            )
+
+        if project.has_seer:
+            return Promise.reject(GraphQLError('Project has a seer already!'))
+
+        # If the project does not have at least one stage, is rejected
+        if len(project.stages) < 1:
+            return Promise.reject(GraphQLError('Project must have at least one stage!'))
+
+        # If there are none seers in the system, is rejected
+        if not has_seer():
+            return Promise.reject(
+                GraphQLError('There are no seer availables in the system :(')
+            )
+        seer = get_seer()
+
+        # Create wallet to project
+        stages_cost = []
+        new_goal = 0
+        for index, stage in enumerate(
+            sorted(project.stages, key=lambda x: x.creation_date), 1
+        ):
+            stage.stage_index = index
+            stages_cost.append(stage.goal)
+            new_goal += stage.goal
+        body = {
+            "ownerId": user.wallet.internal_id,
+            "reviewerId": seer.wallet.internal_id,
+            "stagesCost": stages_cost,
+        }
+        r = request_post("/project", body)
+        if r.status_code != 200:
+            return Promise.reject(
+                GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
+            )
+
+        response_json = json.loads(r.content.decode())
+        project.smart_contract_hash = response_json["txHash"]
+        project.seer = seer
+        project.has_seer = True
+        project.goal = new_goal
+        project.current_state = State.FUNDING
+        db.session.commit()
+        return project
