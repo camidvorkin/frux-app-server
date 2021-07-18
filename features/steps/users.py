@@ -86,7 +86,10 @@ MUTATION_SET_SEER = '''
     mutation {
         mutateSetSeer {
             email,
-            isSeer
+            isSeer,
+            wallet {
+                internalId
+            }
         }
     }
 '''
@@ -239,6 +242,7 @@ def step_impl(context, email):
 
     res = json.loads(context.response.data.decode())
     assert res['data']['mutateSetSeer']['isSeer']
+    context.seer_internal_id = res['data']['mutateSetSeer']['wallet']['internalId']
 
 
 @when(u'user updates their latitude to "{latitude}" and longitude to "{longitude}"')

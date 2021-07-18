@@ -74,7 +74,9 @@ def step_impl(context):
 def step_impl(context, email, n):
     context.tx_hash = str(uuid.uuid1())
     mock_smart_contract_response(
-        f'/project/{context.tx_hash}/stage/{n}', {'reviewerId': str(uuid.uuid1())}, 200
+        f'/project/{context.tx_hash}/stage/{n}',
+        {'reviewerId': context.seer_internal_id},
+        200,
     )
 
     variables = {'idProject': context.last_project_id, 'idStage': n}
@@ -83,7 +85,6 @@ def step_impl(context, email, n):
         json={'query': MUTATION_COMPLETE_STAGE, 'variables': json.dumps(variables)},
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
-    assert context.response.status_code == 200
     if json.loads(context.response.data.decode())['data']['mutateCompleteStage']:
         context.last_project_id = json.loads(context.response.data.decode())['data'][
             'mutateCompleteStage'
