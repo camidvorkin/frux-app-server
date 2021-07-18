@@ -46,8 +46,8 @@ Feature: stages
     When the seer "gracedoe@gmail.com" complete the stage 2
     Then stages are complete up to stage 2
 
-  Scenario: when a more than one stages project are completed the funds are released
-    Given user with mail "johndoe@gmail.com" is authenticated
+  Scenario: when one stage that is already completed tries be set as completed again
+    Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
     And a new project was created by the user with title "Potato salad"
     And a stage was created with title "My first potato salad" and goal 150
     And a stage was created with title "My second potato salad" and goal 100

@@ -84,6 +84,10 @@ def step_impl(context, email, n):
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
     assert context.response.status_code == 200
+    if json.loads(context.response.data.decode())['data']['mutateCompleteStage']:
+        context.last_project_id = json.loads(context.response.data.decode())['data'][
+            'mutateCompleteStage'
+        ]['dbId']
 
 
 @then(u'stages are complete up to stage {n}')
