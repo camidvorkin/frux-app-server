@@ -781,9 +781,9 @@ class CompleteStageMutation(graphene.Mutation):
             return Promise.reject(GraphQLError('This stage was already released!'))
 
         body = {"reviewerId": info.context.user.wallet.internal_id}
-        stage_index = stage.stage_index + 1
+        stage_index = stage.stage_index
         try:
-            r = requests.post(
+            requests.post(
                 f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/project/{project.smart_contract_hash}/stageId/{stage_index}",
                 json=body,
             )
@@ -791,13 +791,11 @@ class CompleteStageMutation(graphene.Mutation):
             return Promise.reject(
                 GraphQLError('Unable to request project! Payments service is down!')
             )
-        if r.status_code != 200:
-            return Promise.reject(
-                GraphQLError(f'Unable to release funds. {r.status_code} - {r.text}')
-            )
 
-        for i in range(id_stage):
-            project.stages[i].funds_released = True
+        for stage in sorted(project.stages, key=lambda x: x.creation_date):
+            if stage.stage_index > stage_index:
+                break
+            stage.funds_released = True
         db.session.commit()
 
         return project
