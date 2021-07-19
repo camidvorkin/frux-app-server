@@ -8,6 +8,7 @@ from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphql import GraphQLError
 from promise import Promise
 
+from frux_app_server.graphqlschema.filters import FruxFilterableConnectionField
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
 from frux_app_server.models import Category as CategoryModel
@@ -19,8 +20,6 @@ from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import Review as ReviewModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
-
-from .filters import FruxFilterableConnectionField
 
 
 class User(SQLAlchemyObjectType):

@@ -1,9 +1,9 @@
 import json
-import os
 import uuid
 
 import responses
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
+from commons import mock_smart_contract_response
 
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
@@ -32,7 +32,12 @@ MUTATION_SEER_PROJECT = '''
         mutateSeerProject(idProject: $idProject) {
             dbId,
             currentState,
-            goal
+            goal,
+            seer {
+               wallet{
+                    internalId
+                }
+            }
         }
     }
 '''
@@ -64,11 +69,6 @@ QUERY_PROJECT_STATE = '''
         }
     }
 '''
-
-
-def mock_smart_contract_response(path, content, status_code, verb=responses.POST):
-    url = os.environ.get('FRUX_SC_URL', 'http://localhost:3000')
-    responses.add(verb, url + path, body=json.dumps(content), status=status_code)
 
 
 @when(u'user views their profile')
@@ -138,9 +138,11 @@ def step_impl(context, email):
         headers={'Authorization': f'Bearer {email}'},
     )
     assert context.response.status_code == 200
-
     res = json.loads(context.response.data.decode())
     context.project_goal = int(res['data']['mutateSeerProject']['goal'])
+    context.seer_internal_id = res['data']['mutateSeerProject']['seer']['wallet'][
+        'internalId'
+    ]
 
 
 @then(u'the project state is "{state}"')

@@ -37,7 +37,7 @@ repos:
       language: system
       types: [python]
       stages: [commit]
-      args: [--load-plugins, pylint_flask_sqlalchemy]
+      args: [--load-plugins, pylint_flask_sqlalchemy, --disable=E0402]
       exclude: frux_app_server/migrations|docs
 -   repo: git://github.com/pre-commit/pre-commit-hooks
     rev: v2.5.0

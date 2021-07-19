@@ -1,6 +1,5 @@
 import json
 import os
-import re
 import time
 
 import requests
@@ -8,28 +7,16 @@ import sqlalchemy
 from firebase_admin import auth
 from graphene_sqlalchemy import SQLAlchemyConnectionField
 from graphql import GraphQLError
-from promise import Promise
+from sqlalchemy.sql import func
 
 from frux_app_server.models import Admin as AdminModel
-from frux_app_server.models import Project as ProjectModel
+from frux_app_server.models import Category as CategoryModel
+from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
 
 from ..services import datadog_client
-
-
-def is_valid_email(email):
-    return re.match(
-        r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-        email,
-    )
-
-
-def is_valid_location(latitude, longitude):
-    return re.match(r"^(\-?([0-8]?[0-9](\.\d+)?|90(.[0]+)?))$", latitude) and re.match(
-        r"^(\-?([1]?[0-7]?[0-9](\.\d+)?|180((.[0]+)?)))$", longitude
-    )
 
 
 def request_user_wallet(user):
@@ -52,7 +39,7 @@ def request_user_wallet(user):
     user.wallet_address = wallet.address
 
 
-def requires_auth(func):
+def requires_auth(function):
     '''
     Authorization decorator for graphql queries/objects.
     Users are authenticated with a Bearer Token given by the firebase app.
@@ -99,7 +86,7 @@ def requires_auth(func):
             request_user_wallet(info.context.user)
             db.session.commit()
 
-        return func(obj, info, **kwargs)
+        return function(obj, info, **kwargs)
 
     return wrapper
 
@@ -116,8 +103,35 @@ class CustomSQLAlchemyConnectionField(SQLAlchemyConnectionField):
         )
 
 
-def get_project(project_id):
-    query = db.session.query(ProjectModel).filter_by(id=project_id)
-    if query.count() != 1:
-        return Promise.reject(GraphQLError('No project found!'))
-    return query.first()
+def get_category(category):
+    return db.session.query(CategoryModel).filter_by(name=category).one()
+
+
+def get_seer():
+    return (
+        db.session.query(UserModel)
+        .filter_by(is_seer=True)
+        .order_by(func.random())
+        .first()
+    )
+
+
+def get_project_stage(id_project, id_stage):
+    return (
+        db.session.query(ProjectStageModel)
+        .filter_by(project_id=id_project, stage_index=id_stage)
+        .one()
+    )
+
+
+def request_post(tags, body):
+    try:
+        r = requests.post(
+            f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}{tags}",
+            json=body,
+        )
+    except requests.ConnectionError as e:
+        raise GraphQLError(
+            'Unable to request project! Payments service is down!'
+        ) from e
+    return r
