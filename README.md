@@ -16,7 +16,9 @@ If you are only interested in the source code, check out the different repos!
 - [frux-app-server](https://github.com/camidvorkin/frux-app-server)
 - [frux-web](https://github.com/JuampiRombola/frux-web)
 - [frux-mobile](https://github.com/FdelMazo/frux-mobile)
-
+- [frux-smart-contract](https://github.com/JDSanto/frux-smart-contract)
+- [frux-chat](https://github.com/JDSanto/frux-chat)
+- 
 Frux is currently being developed by
 
 - [@camidvorkin](https://www.github.com/camidvorkin)
