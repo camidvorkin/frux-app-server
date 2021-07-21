@@ -32,6 +32,18 @@ def is_project_invalid(project_id):
     return db.session.query(ProjectModel).filter_by(id=project_id).count() != 1
 
 
+# TODO: waiting for acceptance logic
+def asign_seer(user_id):
+    projects = db.session.query(ProjectModel).filter_by(seer_id=user_id)
+    for project in projects:
+        project.has_seer = False
+        seer = get_seer()
+        if seer is not None:
+            project.seer = seer
+            project.has_seer = True
+        db.session.commit()
+
+
 class ProjectMutation(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
