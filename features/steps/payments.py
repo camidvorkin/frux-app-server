@@ -34,7 +34,8 @@ MUTATION_SEER_PROJECT = '''
             currentState,
             goal,
             seer {
-               wallet{
+                email
+                wallet{
                     internalId
                 }
             }

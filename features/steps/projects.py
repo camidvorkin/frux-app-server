@@ -230,6 +230,15 @@ def step_impl(context):
     assert res['data']['project']['name'] == updated_variables['name']
 
 
+@then(u'the seer of the project is "{email}"')
+@when(u'the seer of the project is "{email}"')
+def step_impl(context, email):
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    print(email + " == " + res['data']['mutateSeerProject']['seer']['email'])
+    assert res['data']['mutateSeerProject']['seer']['email'] == email
+
+
 @then('get project with name "{name}" and description "{description}"')
 def step_impl(context, name, description):
     assert context.response.status_code == 200

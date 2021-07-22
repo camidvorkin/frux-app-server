@@ -84,3 +84,14 @@ Feature: users
      Given user is already registered with mail "pepe@fi.uba.ar"
       When user updates their interests to "Games,Worlds"
       Then operation is rejected with the message "Invalid Category!"
+
+   Scenario: user register as a Seer
+     Given user is already registered with mail "pepe@fi.uba.ar"
+      When user with mail "pepe@fi.uba.ar" has a seer role
+      Then there is 1 seer in the system
+
+   Scenario: user register as a Seer and then reject the position
+     Given user is already registered with mail "pepe@fi.uba.ar"
+      When user with mail "pepe@fi.uba.ar" has a seer role
+      And user with mail "pepe@fi.uba.ar" reject the role as seer
+      Then there is 0 seer in the system
