@@ -134,7 +134,7 @@ class UpdateUser(graphene.Mutation):
             user.longitude = longitude
         if interests is not None:
             user.interests = []
-            for c in interests:
+            for c in set(interests):
                 if is_category_invalid(c):
                     return Promise.reject(GraphQLError('Invalid Category!'))
                 else:
