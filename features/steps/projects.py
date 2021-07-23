@@ -235,7 +235,6 @@ def step_impl(context):
 def step_impl(context, email):
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
-    print(email + " == " + res['data']['mutateSeerProject']['seer']['email'])
     assert res['data']['mutateSeerProject']['seer']['email'] == email
 
 
