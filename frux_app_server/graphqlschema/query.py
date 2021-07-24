@@ -10,6 +10,7 @@ from .object import (
     ProjectConnections,
     ProjectModel,
     ProjectStage,
+    Stats,
     User,
     UserConnections,
     UserModel,
@@ -35,6 +36,11 @@ class Query(graphene.ObjectType):
 
     def resolve_project(self, info, db_id):  # pylint: disable=unused-argument
         return ProjectModel.query.get(db_id)
+
+    stats = graphene.Field(Stats)
+
+    def resolve_stats(self, _info):
+        return []
 
     all_users = FruxFilterableConnectionField(UserConnections)
     all_projects = FruxFilterableConnectionField(ProjectConnections)
