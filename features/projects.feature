@@ -80,3 +80,36 @@ Feature: projects
       When project new name is "New project"
       And project new description is "Update old project"
       Then the project's information change
+
+
+   Scenario: a project in "in progress" stage cannot have its funds withdrawn
+    Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
+    And a new project was created by the user with title "Potato salad"
+    And a stage was created with title "My first potato salad" and goal 150
+    And a stage was created with title "My second potato salad" and goal 100
+    And user with mail "ale@gmail.com" is authenticated and has a wallet
+    And user with mail "ale@gmail.com" has a seer role
+    When the owner of the project "johndoe@gmail.com" enables the project for funding
+    And the seer of the project is "ale@gmail.com"
+    And user with mail "ale@gmail.com" reject the role as seer
+    Then operation is rejected with the message "Seer must wait until all their projects are either completed or cancelled! You can't leave the job in funding state"
+
+   Scenario: cancel project
+    Given an old project
+    When the project is cancelled
+    Then the project was cancelled
+
+   Scenario: a project in "canceled" stage can have its funds withdrawn
+    Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
+    And a new project was created by the user with title "Potato salad"
+    And a stage was created with title "My first potato salad" and goal 150
+    And a stage was created with title "My second potato salad" and goal 100
+    And user with mail "ale@gmail.com" is authenticated and has a wallet
+    And user with mail "ale@gmail.com" has a seer role
+    When the owner of the project "johndoe@gmail.com" enables the project for funding
+    And the seer of the project is "ale@gmail.com"
+    And the project is cancelled
+    And user with mail "ela@gmail.com" is authenticated and has a wallet
+    And user with mail "ela@gmail.com" has a seer role
+    And user with mail "ale@gmail.com" reject the role as seer
+    Then the seer of the project is "ela@gmail.com"

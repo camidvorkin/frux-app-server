@@ -258,12 +258,13 @@ def step_impl(context, email):
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_SET_SEER, 'variables': json.dumps({'dbId': 1})},
-        headers={'Authorization': f'Bearer {email}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
     assert context.response.status_code == 200
 
     res = json.loads(context.response.data.decode())
     assert res['data']['mutateSetSeer']['isSeer']
+    context.email = email
 
 
 @when(u'user with mail "{email}" reject the role as seer')
@@ -273,10 +274,6 @@ def step_impl(context, email):
         json={'query': MUTATION_REMOVE_SEER, 'variables': json.dumps({'dbId': 1})},
         headers={'Authorization': f'Bearer {email}'},
     )
-    assert context.response.status_code == 200
-
-    res = json.loads(context.response.data.decode())
-    assert not res['data']['mutateRemoveSeer']['isSeer']
 
 
 @when(u'user updates their latitude to "{latitude}" and longitude to "{longitude}"')

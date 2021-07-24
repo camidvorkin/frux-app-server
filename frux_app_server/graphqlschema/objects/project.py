@@ -331,3 +331,31 @@ class SeerProjectMutation(graphene.Mutation):
         project.current_state = State.FUNDING
         db.session.commit()
         return project
+
+
+class CancelProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(self, info, id_project):  # pylint: disable=unused-argument
+
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+
+        user_email = info.context.user.email
+        if project.owner.email != user_email and (
+            project.seer is not None and project.seer.email != user_email
+        ):
+            return Promise.reject(
+                GraphQLError(
+                    'This user do not have cancellation permitions in this project!'
+                )
+            )
+
+        project.current_state = State.CANCELED
+        db.session.commit()
+        return project

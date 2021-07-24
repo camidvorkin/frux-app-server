@@ -5,6 +5,7 @@ from .objects.favorite import FavProject, UnFavProject
 from .objects.investment import InvestProject, WithdrawFundsMutation
 from .objects.project import (
     BlockProjectMutation,
+    CancelProjectMutation,
     CompleteStageMutation,
     ProjectMutation,
     SeerProjectMutation,
@@ -43,3 +44,4 @@ class Mutation(graphene.ObjectType):
     mutate_withdraw_funds = WithdrawFundsMutation.Field()
     mutate_review_project = ReviewProjectMutation.Field()
     mutate_complete_stage = CompleteStageMutation.Field()
+    mutate_cancel_project = CancelProjectMutation.Field()
