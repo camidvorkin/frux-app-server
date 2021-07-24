@@ -58,6 +58,7 @@ class InvestProject(graphene.Mutation):
         tx = json.loads(r.text)
         invested_amount = wei_to_eth(tx['value']['hex'])
 
+        # Sum all the invesments for the project
         project_collected = (
             db.session.query(func.sum(InvestmentsModel.invested_amount))
             .filter(InvestmentsModel.project_id == id_project)
@@ -66,6 +67,7 @@ class InvestProject(graphene.Mutation):
         if not project_collected:
             project_collected = 0
 
+        # If the new investment is more than the rest to collect
         if project.goal - project_collected <= invested_amount:
             project.current_state = State.IN_PROGRESS
             invested_amount = project.goal - project_collected
@@ -73,6 +75,7 @@ class InvestProject(graphene.Mutation):
             first_stage.funds_released = True
 
         q = get_investment(info.context.user.id, id_project)
+        # If user hasn't already invest, an invest is add to the InvestmentsModel, else the amount invested is sum up
         if q.count() == 0:
             invest = InvestmentsModel(
                 user_id=info.context.user.id,

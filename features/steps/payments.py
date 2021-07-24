@@ -34,7 +34,8 @@ MUTATION_SEER_PROJECT = '''
             currentState,
             goal,
             seer {
-               wallet{
+                email
+                wallet{
                     internalId
                 }
             }
@@ -100,6 +101,7 @@ def step_impl(context):
 
 
 @given(u'user with mail "{email}" is authenticated and has a wallet')
+@when(u'user with mail "{email}" is authenticated and has a wallet')
 def step_impl(context, email):
     context.execute_steps(
         u"""

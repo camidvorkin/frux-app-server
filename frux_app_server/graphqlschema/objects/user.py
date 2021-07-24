@@ -16,6 +16,8 @@ from frux_app_server.models import User as UserModel
 from frux_app_server.models import db
 from frux_app_server.services import datadog_client
 
+from .project import asign_seer, validate_seer_projects
+
 
 def get_user(user_id):
     return db.session.query(UserModel).filter_by(id=user_id).one()
@@ -189,4 +191,27 @@ class SetSeerMutation(graphene.Mutation):
         user = info.context.user
         user.is_seer = True
         db.session.commit()
+        return user
+
+
+class RemoveSeerMutation(graphene.Mutation):
+    Output = User
+
+    @requires_auth
+    def mutate(
+        self, info,
+    ):  # pylint: disable=unused-argument
+        user = info.context.user
+
+        if not validate_seer_projects(user.id):
+            return Promise.reject(
+                GraphQLError(
+                    'Seer must wait until all their projects are either completed or cancelled! You can\'t leave the job in funding state'
+                )
+            )
+
+        user.is_seer = False
+        db.session.commit()
+
+        asign_seer(user.id)
         return user

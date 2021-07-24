@@ -91,6 +91,30 @@ MUTATION_SET_SEER = '''
     }
 '''
 
+MUTATION_GET_SEERS = '''
+{ allUsers
+    (filters : {isSeer: true}) {
+        edges {
+            node {
+                id
+                username
+                isSeer
+            }
+        }
+    }
+  }
+'''
+
+MUTATION_REMOVE_SEER = '''
+mutation {
+    mutateRemoveSeer{
+        dbId
+        username
+        isSeer
+    }
+}
+'''
+
 variables = {}
 updated_variables = {}
 
@@ -229,16 +253,27 @@ def step_impl(context):
 
 
 @given(u'user with mail "{email}" has a seer role')
+@when(u'user with mail "{email}" has a seer role')
 def step_impl(context, email):
     context.response = context.client.post(
         '/graphql',
         json={'query': MUTATION_SET_SEER, 'variables': json.dumps({'dbId': 1})},
-        headers={'Authorization': f'Bearer {email}'},
+        headers={'Authorization': f'Bearer {context.last_token}'},
     )
     assert context.response.status_code == 200
 
     res = json.loads(context.response.data.decode())
     assert res['data']['mutateSetSeer']['isSeer']
+    context.email = email
+
+
+@when(u'user with mail "{email}" reject the role as seer')
+def step_impl(context, email):
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_REMOVE_SEER, 'variables': json.dumps({'dbId': 1})},
+        headers={'Authorization': f'Bearer {email}'},
+    )
 
 
 @when(u'user updates their latitude to "{latitude}" and longitude to "{longitude}"')
@@ -287,3 +322,15 @@ def step_impl(context, interests):
     assert len(res['data']['mutateUpdateUser']['interests']['edges']) == len(
         interests.split(',')
     )
+
+
+@then(u'there is {n} seer in the system')
+def step_impl(context, n):
+    context.response = context.client.post(
+        '/graphql', json={'query': MUTATION_GET_SEERS, 'variables': {}},
+    )
+    assert context.response.status_code == 200
+
+    res = json.loads(context.response.data.decode())
+
+    assert len(res['data']['allUsers']['edges']) == int(n)

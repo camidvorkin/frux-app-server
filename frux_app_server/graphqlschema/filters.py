@@ -86,7 +86,6 @@ class ProjectFilter(FilterSet):
             sqlalchemy.and_(ProjectModel.id == hashtag_association.project_id,),
         )
         filter_ = hashtag_association.hashtag.in_(hashtags)
-        print(query, filter_, hashtags)
         return query, filter_
 
     @staticmethod

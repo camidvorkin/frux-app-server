@@ -32,6 +32,26 @@ def is_project_invalid(project_id):
     return db.session.query(ProjectModel).filter_by(id=project_id).count() != 1
 
 
+def asign_seer(user_id):
+    projects = db.session.query(ProjectModel).filter_by(seer_id=user_id)
+    for project in projects:
+        project.has_seer = False
+        seer = get_seer()
+        if seer is not None:
+            project.seer = seer
+            project.has_seer = True
+        db.session.commit()
+
+
+def validate_seer_projects(user_id):
+    # TODO: improve this cuz is horrible
+    projects = db.session.query(ProjectModel).filter_by(seer_id=user_id)
+    for project in projects:
+        if project.current_state in [State.FUNDING, State.IN_PROGRESS]:
+            return False
+    return True
+
+
 class ProjectMutation(graphene.Mutation):
     class Arguments:
         name = graphene.String(required=True)
@@ -244,8 +264,11 @@ class CompleteStageMutation(graphene.Mutation):
             if stage.stage_index > stage_index:
                 break
             stage.funds_released = True
-        db.session.commit()
 
+        if id_stage == max_stage:
+            project.current_state = State.COMPLETE
+
+        db.session.commit()
         return project
 
 
@@ -309,5 +332,31 @@ class SeerProjectMutation(graphene.Mutation):
         project.has_seer = True
         project.goal = new_goal
         project.current_state = State.FUNDING
+        db.session.commit()
+        return project
+
+
+class CancelProjectMutation(graphene.Mutation):
+    class Arguments:
+        id_project = graphene.Int(required=True)
+
+    Output = Project
+
+    @requires_auth
+    def mutate(self, info, id_project):  # pylint: disable=unused-argument
+
+        if is_project_invalid(id_project):
+            return Promise.reject(GraphQLError('Not project found!'))
+        project = get_project(id_project)
+
+        user_email = info.context.user.email
+        if project.owner.email != user_email and (
+            project.seer is not None and project.seer.email != user_email
+        ):
+            return Promise.reject(
+                GraphQLError('This user is not the owner of the project!')
+            )
+
+        project.current_state = State.CANCELED
         db.session.commit()
         return project
