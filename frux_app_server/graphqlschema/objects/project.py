@@ -354,9 +354,7 @@ class CancelProjectMutation(graphene.Mutation):
             project.seer is not None and project.seer.email != user_email
         ):
             return Promise.reject(
-                GraphQLError(
-                    'This user is not the owner of the project!'
-                )
+                GraphQLError('This user is not the owner of the project!')
             )
 
         project.current_state = State.CANCELED
