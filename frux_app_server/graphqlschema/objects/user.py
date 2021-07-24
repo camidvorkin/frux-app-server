@@ -202,8 +202,6 @@ class RemoveSeerMutation(graphene.Mutation):
         self, info,
     ):  # pylint: disable=unused-argument
         user = info.context.user
-        user.is_seer = False
-        db.session.commit()
 
         if not validate_seer_projects(user.id):
             return Promise.reject(
@@ -211,5 +209,9 @@ class RemoveSeerMutation(graphene.Mutation):
                     'Seer must wait until all their projects are either completed or cancelled! You can\'t leave the job in funding state'
                 )
             )
+
+        user.is_seer = False
+        db.session.commit()
+
         asign_seer(user.id)
         return user
