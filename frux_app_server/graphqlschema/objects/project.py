@@ -355,7 +355,7 @@ class CancelProjectMutation(graphene.Mutation):
         ):
             return Promise.reject(
                 GraphQLError(
-                    'This user do not have cancellation permitions in this project!'
+                    'This user is not the owner of the project!'
                 )
             )
 
