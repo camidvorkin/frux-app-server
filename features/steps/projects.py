@@ -60,6 +60,7 @@ QUERY_SINGLE_PROJECT = '''
         project(dbId: $dbId) {
             name
             description
+            currentState
             seer {
                 email
             }
@@ -199,7 +200,6 @@ def step_impl(context, name):
 
 @when('the project is cancelled')
 def step_impl(context):
-    print(context.email)
     context.response = context.client.post(
         '/graphql',
         json={
@@ -300,8 +300,16 @@ def step_impl(context, title):
     ]['dbId']
 
 
-@then('the project was cancelled')
-def step_impl(context):
+@when(u'the stage of the project is "{stage}"')
+@then(u'the stage of the project is "{stage}"')
+def step_impl(context, stage):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_SINGLE_PROJECT,
+            'variables': json.dumps({'dbId': int(1)}),
+        },
+    )
     assert context.response.status_code == 200
     res = json.loads(context.response.data.decode())
-    assert res['data']['mutateCancelProject']['currentState'] == "CANCELED"
+    assert res['data']['project']['currentState'] == str(stage)

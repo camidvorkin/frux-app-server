@@ -97,7 +97,7 @@ Feature: projects
    Scenario: cancel project
     Given an old project
     When the project is cancelled
-    Then the project was cancelled
+    Then the stage of the project is "CANCELED"
 
    Scenario: a project in "canceled" stage can have its funds withdrawn
     Given user with mail "johndoe@gmail.com" is authenticated and has a wallet

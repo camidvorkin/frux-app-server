@@ -264,8 +264,11 @@ class CompleteStageMutation(graphene.Mutation):
             if stage.stage_index > stage_index:
                 break
             stage.funds_released = True
-        db.session.commit()
 
+        if id_stage == max_stage:
+            project.current_state = State.COMPLETE
+
+        db.session.commit()
         return project
 
 
