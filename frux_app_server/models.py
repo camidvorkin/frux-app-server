@@ -83,6 +83,7 @@ class ProjectStage(db.Model):  # type:ignore
     goal = db.Column(db.Float)
     creation_date = db.Column(db.DateTime)
     funds_released = db.Column(db.Boolean, default=False)
+    funds_released_at = db.Column(db.DateTime)
 
 
 class Category(db.Model):  # type:ignore
