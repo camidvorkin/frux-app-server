@@ -12,6 +12,7 @@ from .object import (
     ProjectStage,
     Stats,
     User,
+    UserConnections,
     UserModel,
 )
 from .utils import requires_auth
@@ -48,6 +49,10 @@ class Query(graphene.ObjectType,):
 
     def resolve_stats(self, _info):
         return []
+
+    all_users = FruxFilterableConnectionField(
+        UserConnections, description='All the users are listed'
+    )
 
     all_projects = FruxFilterableConnectionField(
         ProjectConnections, description='All the projects are listed'
