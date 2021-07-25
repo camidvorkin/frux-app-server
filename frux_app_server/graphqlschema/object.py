@@ -4,9 +4,11 @@ import functools
 import graphene
 from firebase_admin import storage
 from graphene_sqlalchemy import SQLAlchemyObjectType
+from graphql import GraphQLError
+from promise import Promise
 
 from frux_app_server.graphqlschema.filters import FruxFilterableConnectionField
-from frux_app_server.graphqlschema.utils import request_get, request_user_wallet
+from frux_app_server.graphqlschema.utils import request_get, requires_auth
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
 from frux_app_server.models import Category as CategoryModel
@@ -46,10 +48,10 @@ class User(SQLAlchemyObjectType):
     def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
         return len(self.favorited_projects)
 
+    @requires_auth
     def resolve_wallet_private_key(self, info):  # pylint: disable=unused-argument
-        if self.wallet is None:
-            request_user_wallet(self)
-            db.session.commit()
+        if info.context.user.id != self.id:
+            return Promise.reject(GraphQLError('Unauthorized'))
         response = request_get(f"/wallet/{self.wallet.internal_id}")
         return response["privateKey"]
 
