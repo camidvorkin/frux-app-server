@@ -1,16 +1,14 @@
 import datetime
 import functools
-import json
-import os
 
 import graphene
-import requests
 from firebase_admin import storage
 from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphql import GraphQLError
 from promise import Promise
 
 from frux_app_server.graphqlschema.filters import FruxFilterableConnectionField
+from frux_app_server.graphqlschema.utils import request_get, requires_auth
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
 from frux_app_server.models import Category as CategoryModel
@@ -31,6 +29,7 @@ class User(SQLAlchemyObjectType):
     is_seeder = graphene.Boolean()
     is_sponsor = graphene.Boolean()
     favorite_count = graphene.Int()
+    wallet_private_key = graphene.String()
 
     class Meta:
         description = 'Registered users'
@@ -48,6 +47,13 @@ class User(SQLAlchemyObjectType):
 
     def resolve_favorite_count(self, info):  # pylint: disable=unused-argument
         return len(self.favorited_projects)
+
+    @requires_auth
+    def resolve_wallet_private_key(self, info):  # pylint: disable=unused-argument
+        if info.context.user.id != self.id:
+            return Promise.reject(GraphQLError('Unauthorized'))
+        response = request_get(f"/wallet/{self.wallet.internal_id}")
+        return response["privateKey"]
 
 
 class UserConnections(graphene.Connection):
@@ -172,20 +178,8 @@ class Wallet(SQLAlchemyObjectType):
         interfaces = (graphene.relay.Node,)
 
     def resolve_balance(self, info):  # pylint: disable=unused-argument
-        try:
-            r = requests.get(
-                f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet/{self.internal_id}/balance",
-            )
-        except requests.ConnectionError:
-            return Promise.reject(
-                GraphQLError('Unable to request wallet! Payments service is down!')
-            )
-        if r.status_code != 200:
-            return Promise.reject(
-                GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
-            )
-        response_json = json.loads(r.content.decode())
-        return response_json["balance"]
+        response = request_get(f"/wallet/{self.internal_id}/balance")
+        return response["balance"]
 
 
 class AssociationHashtag(SQLAlchemyObjectType):
