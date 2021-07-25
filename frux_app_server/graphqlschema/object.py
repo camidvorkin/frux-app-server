@@ -8,7 +8,7 @@ from graphql import GraphQLError
 from promise import Promise
 
 from frux_app_server.graphqlschema.filters import FruxFilterableConnectionField
-from frux_app_server.graphqlschema.utils import request_get, requires_auth
+from frux_app_server.graphqlschema.utils import requires_auth
 from frux_app_server.models import Admin as AdminModel
 from frux_app_server.models import AssociationHashtag as AssociationHashtagModel
 from frux_app_server.models import Category as CategoryModel
@@ -21,6 +21,7 @@ from frux_app_server.models import Review as ReviewModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
+from frux_app_server.services.smart_contract_client import smart_contract_client
 
 
 class User(SQLAlchemyObjectType):
@@ -56,8 +57,7 @@ class User(SQLAlchemyObjectType):
     def resolve_wallet_private_key(self, info):  # pylint: disable=unused-argument
         if info.context.user.id != self.id:
             return Promise.reject(GraphQLError('Unauthorized'))
-        response = request_get(f"/wallet/{self.wallet.internal_id}")
-        return response["privateKey"]
+        return smart_contract_client.get_private_key(self.wallet.internal_id)
 
 
 class UserConnections(graphene.Connection):
@@ -192,8 +192,7 @@ class Wallet(SQLAlchemyObjectType):
         interfaces = (graphene.relay.Node,)
 
     def resolve_balance(self, info):  # pylint: disable=unused-argument
-        response = request_get(f"/wallet/{self.internal_id}/balance")
-        return response["balance"]
+        return smart_contract_client.get_wallet_balance(self.internal_id)
 
 
 class AssociationHashtag(SQLAlchemyObjectType):

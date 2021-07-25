@@ -1,6 +1,8 @@
 import json
+import os
 import uuid
 
+import requests
 import responses
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
 from commons import mock_smart_contract_response
@@ -194,6 +196,61 @@ def step_impl(context, email, n):
         f'/project/{context.tx_hash}',
         {'value': {'hex': hex(invested * (10 ** 18))}},
         200,
+    )
+
+    variables = {'idProject': context.last_project_id, 'investedAmount': n}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_INVEST_PROJECT, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+
+@when(u'user "{email}" does not have enough funds but invests {n}')
+@responses.activate
+def step_impl(context, email, n):
+    n = int(n)
+    invested = min(context.project_goal, n)
+    context.project_goal -= invested
+
+    if 'project_investments' not in context:
+        context.project_investments = {}
+    context.project_investments[email] = (
+        context.project_investments.get(email, 0) + invested
+    )
+
+    mock_smart_contract_response(
+        f'/project/{context.tx_hash}', {'code': 'INSUFFICIENT_FUNDS'}, 500,
+    )
+
+    variables = {'idProject': context.last_project_id, 'investedAmount': n}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_INVEST_PROJECT, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+    assert context.response.status_code == 200
+
+
+@when(u'payment service is down but user "{email}" invests {n}')
+@responses.activate
+def step_impl(context, email, n):
+    n = int(n)
+    invested = min(context.project_goal, n)
+    context.project_goal -= invested
+
+    if 'project_investments' not in context:
+        context.project_investments = {}
+    context.project_investments[email] = (
+        context.project_investments.get(email, 0) + invested
+    )
+
+    url = os.environ.get('FRUX_SC_URL', 'http://localhost:3000')
+    responses.add(
+        responses.POST,
+        url + f'/project/{context.tx_hash}',
+        body=requests.ConnectionError(),
     )
 
     variables = {'idProject': context.last_project_id, 'investedAmount': n}

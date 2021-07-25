@@ -1,8 +1,5 @@
-import json
-import os
 import time
 
-import requests
 import sqlalchemy
 from firebase_admin import auth
 from graphene_sqlalchemy import SQLAlchemyConnectionField
@@ -15,22 +12,15 @@ from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
-
-from ..services import datadog_client
+from frux_app_server.services import datadog_client
+from frux_app_server.services.smart_contract_client import smart_contract_client
 
 
 def request_user_wallet(user):
-    try:
-        r = requests.post(
-            f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}/wallet"
-        )
-    except requests.ConnectionError:
+    response_json = smart_contract_client.create_user_wallet()
+    if not response_json:
         return
 
-    if r.status_code != 200:
-        return
-
-    response_json = json.loads(r.content.decode())
     wallet = WalletModel(
         internal_id=response_json["id"], address=response_json["address"]
     )
@@ -122,28 +112,3 @@ def get_project_stage(id_project, id_stage):
         .filter_by(project_id=id_project, stage_index=id_stage)
         .one()
     )
-
-
-def request_post(tags, body):
-    try:
-        r = requests.post(
-            f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}{tags}",
-            json=body,
-        )
-    except requests.ConnectionError as e:
-        raise GraphQLError(
-            'Unable to request project! Payments service is down!'
-        ) from e
-    return r
-
-
-def request_get(tags):
-    try:
-        r = requests.get(
-            f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}{tags}",
-        )
-    except requests.ConnectionError:
-        return GraphQLError('Unable to request wallet! Payments service is down!')
-    if r.status_code != 200:
-        return GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
-    return json.loads(r.content.decode())

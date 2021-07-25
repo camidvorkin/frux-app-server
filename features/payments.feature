@@ -25,6 +25,20 @@ Feature: reviews
     Then the project state is "FUNDING"
     And the project invested ammount is 120 and has 1 investors
 
+  Scenario: a project in funding stage can't be invested in if the funder does not have funds
+    Given the owner of the project "johndoe@gmail.com" enabled the project for funding
+    When user "peterdoe@gmail.com" does not have enough funds but invests 120
+    Then operation is rejected with the message "Unable to fund project! Insufficient funds!"
+    And the project state is "FUNDING"
+    And the project invested ammount is 0 and has 0 investors
+
+  Scenario: a project in funding stage can't be invested in if the payments service is down
+    Given the owner of the project "johndoe@gmail.com" enabled the project for funding
+    When payment service is down but user "peterdoe@gmail.com" invests 120
+    Then operation is rejected with the message "Unable to fund project! Payments service is down!"
+    And the project state is "FUNDING"
+    And the project invested ammount is 0 and has 0 investors
+
   Scenario: a project in funding stage can be invested in by one funder, more than once
     Given the owner of the project "johndoe@gmail.com" enabled the project for funding
     When user "peterdoe@gmail.com" invests 120
