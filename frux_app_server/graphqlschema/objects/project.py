@@ -313,9 +313,10 @@ class SeerProjectMutation(graphene.Mutation):
         # Create wallet to project
         stages_cost = []
         new_goal = 0
-        for index, stage in enumerate(
-            sorted(project.stages, key=lambda x: x.creation_date), 1
-        ):
+        stages = sorted(project.stages, key=lambda x: x.creation_date)
+        stages[0].funds_released = True
+        stages[0].funds_released_at = datetime.datetime.today()
+        for index, stage in enumerate(stages, 1):
             stage.stage_index = index
             stages_cost.append(stage.goal)
             new_goal += stage.goal
