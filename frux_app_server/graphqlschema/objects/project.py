@@ -1,5 +1,4 @@
 import datetime
-import json
 
 import graphene
 from graphql import GraphQLError
@@ -10,7 +9,6 @@ from frux_app_server.graphqlschema.object import Project
 from frux_app_server.graphqlschema.utils import (
     get_project_stage,
     get_seer,
-    request_post,
     requires_auth,
 )
 from frux_app_server.graphqlschema.validations import (
@@ -21,6 +19,7 @@ from frux_app_server.graphqlschema.validations import (
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import db
 from frux_app_server.services import datadog_client
+from frux_app_server.services.smart_contract_client import smart_contract_client
 
 from .hashtag import add_hashtags, delete_hashtags
 
@@ -256,20 +255,13 @@ class CompleteStageMutation(graphene.Mutation):
         if stage.funds_released:
             return Promise.reject(GraphQLError('This stage was already released!'))
 
-        body = {"reviewerId": info.context.user.wallet.internal_id}
         stage_index = stage.stage_index
-        r = request_post(
-            f"/project/{project.smart_contract_hash}/stageId/{stage_index}", body
+
+        smart_contract_client.complete_stage(
+            info.context.user.wallet.internal_id,
+            project.smart_contract_hash,
+            stage_index,
         )
-        if r.status_code != 200:
-            error = json.loads(r.text)
-            if error['code'] == 'INSUFFICIENT_FUNDS':
-                return Promise.reject(
-                    GraphQLError('Unable to release funds! Insufficient funds!')
-                )
-            return Promise.reject(
-                GraphQLError(f'Unable to release funds! {r.status_code} - {r.text}')
-            )
 
         for stage in sorted(project.stages, key=lambda x: x.creation_date):
             if stage.stage_index > stage_index:
@@ -327,19 +319,12 @@ class SeerProjectMutation(graphene.Mutation):
             stage.stage_index = index
             stages_cost.append(stage.goal)
             new_goal += stage.goal
-        body = {
-            "ownerId": user.wallet.internal_id,
-            "reviewerId": seer.wallet.internal_id,
-            "stagesCost": stages_cost,
-        }
-        r = request_post("/project", body)
-        if r.status_code != 200:
-            return Promise.reject(
-                GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
-            )
 
-        response_json = json.loads(r.content.decode())
-        project.smart_contract_hash = response_json["txHash"]
+        tx_hash = smart_contract_client.create_project_smart_contract(
+            user.wallet.internal_id, seer.wallet.internal_id, stages_cost,
+        )
+
+        project.smart_contract_hash = tx_hash
         project.seer = seer
         project.has_seer = True
         project.goal = new_goal
