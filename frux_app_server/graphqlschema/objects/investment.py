@@ -11,6 +11,7 @@ from frux_app_server.graphqlschema.object import Investments
 from frux_app_server.graphqlschema.utils import request_post, requires_auth, wei_to_eth
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import db
+from frux_app_server.services import datadog_client
 
 from .project import get_project, is_project_invalid
 
@@ -87,6 +88,7 @@ class InvestProject(graphene.Mutation):
             invest.date_of_investment = datetime.datetime.utcnow()
 
         db.session.commit()
+        datadog_client.set_project_in_state(project.current_state)
         return invest
 
 

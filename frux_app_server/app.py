@@ -84,5 +84,5 @@ def create_app(test_db=None):
             )
         )
 
-    datadog_client.start()
+    datadog_client.start(new_app)
     return new_app
