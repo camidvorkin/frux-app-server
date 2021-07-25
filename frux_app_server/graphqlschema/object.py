@@ -20,6 +20,7 @@ from frux_app_server.models import ProjectStage as ProjectStageModel
 from frux_app_server.models import Review as ReviewModel
 from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
+from frux_app_server.models import db
 
 
 class User(SQLAlchemyObjectType):
@@ -187,3 +188,34 @@ class Review(SQLAlchemyObjectType):
         description = 'Review of a project'
         model = ReviewModel
         interfaces = (graphene.relay.Node,)
+
+
+class Stats(graphene.ObjectType):
+    class Meta:
+        description = 'General stats of frux-app-server'
+        interfaces = (graphene.relay.Node,)
+
+    total_users = graphene.Int(description='Total users in the system')
+    total_seers = graphene.Int(description='Total seers in the system')
+    total_projects = graphene.Int(description='Total projects in the system')
+    total_favorites = graphene.Int(description='Total favorites in the system')
+    total_investments = graphene.Int(description='Total investments in the system')
+    total_hashtags = graphene.Int(description='Total hashtags in the system')
+
+    def resolve_total_users(self, _info):
+        return db.session.query(UserModel).count()
+
+    def resolve_total_seers(self, _info):
+        return db.session.query(UserModel).filter(UserModel.is_seer).count()
+
+    def resolve_total_projects(self, _info):
+        return db.session.query(ProjectModel).count()
+
+    def resolve_total_favorites(self, _info):
+        return db.session.query(FavoritesModel).count()
+
+    def resolve_total_investments(self, _info):
+        return db.session.query(InvestmentsModel).count()
+
+    def resolve_total_hashtags(self, _info):
+        return db.session.query(HashtagModel).count()

@@ -20,6 +20,7 @@ from frux_app_server.graphqlschema.validations import (
 )
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import db
+from frux_app_server.services import datadog_client
 
 from .hashtag import add_hashtags, delete_hashtags
 
@@ -63,6 +64,9 @@ class ProjectMutation(graphene.Mutation):
         longitude = graphene.String()
         uri_image = graphene.String()
         deadline = graphene.String(required=True)
+
+    class Meta:
+        description = 'Adds a new project to the system'
 
     Output = Project
 
@@ -115,6 +119,9 @@ class ProjectMutation(graphene.Mutation):
         db.session.add(project)
         db.session.commit()
         add_hashtags(hashtags, project.id)
+
+        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_category(project.category_name)
 
         return project
 
@@ -178,6 +185,10 @@ class UpdateProject(graphene.Mutation):
             project.deadline = deadline
 
         db.session.commit()
+
+        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_category(project.category_name)
+
         return project
 
 
@@ -269,6 +280,7 @@ class CompleteStageMutation(graphene.Mutation):
             project.current_state = State.COMPLETE
 
         db.session.commit()
+        datadog_client.set_project_in_state(project.current_state)
         return project
 
 
@@ -333,6 +345,9 @@ class SeerProjectMutation(graphene.Mutation):
         project.goal = new_goal
         project.current_state = State.FUNDING
         db.session.commit()
+
+        datadog_client.set_project_in_state(project.current_state)
+
         return project
 
 
