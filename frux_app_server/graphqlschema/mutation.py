@@ -5,6 +5,7 @@ from .objects.favorite import FavProject, UnFavProject
 from .objects.investment import InvestProject, WithdrawFundsMutation
 from .objects.project import (
     BlockProjectMutation,
+    CancelProjectMutation,
     CompleteStageMutation,
     ProjectMutation,
     SeerProjectMutation,
@@ -15,6 +16,7 @@ from .objects.review import ReviewProjectMutation
 from .objects.stage import ProjectStageMutation
 from .objects.user import (
     BlockUserMutation,
+    RemoveSeerMutation,
     SetSeerMutation,
     UnBlockUserMutation,
     UpdateUser,
@@ -28,6 +30,7 @@ class Mutation(graphene.ObjectType):
     mutate_admin = AdminMutation.Field()
     mutate_update_user = UpdateUser.Field()
     mutate_set_seer = SetSeerMutation.Field()
+    mutate_remove_seer = RemoveSeerMutation.Field()
     mutate_block_user = BlockUserMutation.Field()
     mutate_unblock_user = UnBlockUserMutation.Field()
     mutate_update_project = UpdateProject.Field()
@@ -41,3 +44,4 @@ class Mutation(graphene.ObjectType):
     mutate_withdraw_funds = WithdrawFundsMutation.Field()
     mutate_review_project = ReviewProjectMutation.Field()
     mutate_complete_stage = CompleteStageMutation.Field()
+    mutate_cancel_project = CancelProjectMutation.Field()

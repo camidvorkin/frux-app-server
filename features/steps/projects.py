@@ -58,8 +58,12 @@ MUTATION_NEW_PROJECT_SIMPLE = '''
 QUERY_SINGLE_PROJECT = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
-            name,
+            name
             description
+            currentState
+            seer {
+                email
+            }
         }
     }
 '''
@@ -69,6 +73,15 @@ MUTATION_UPDATE_PROJECT = '''
         mutateUpdateProject(idProject: $idProject, name: $name, description: $description) {
             name,
             description,
+        }
+    }
+'''
+
+MUTATION_CANCEL_PROJECT = '''
+    mutation CancelProject($idProject: Int!) {
+        mutateCancelProject(idProject: $idProject) {
+            name,
+            currentState,
         }
     }
 '''
@@ -140,6 +153,7 @@ def step_impl(context):
         json={'query': MUTATION_NEW_PROJECT, 'variables': json.dumps(variables)},
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
+    context.email = "olduser@gmail.com"
 
 
 @when('projects are listed')
@@ -181,6 +195,18 @@ def step_impl(context, name):
             'query': QUERY_ALL_PROJECT_FILTERS,
             'variables': json.dumps({'name': name}),
         },
+    )
+
+
+@when('the project is cancelled')
+def step_impl(context):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': MUTATION_CANCEL_PROJECT,
+            'variables': json.dumps({'idProject': int(1)}),
+        },
+        headers={'Authorization': f'Bearer {context.email}'},
     )
 
 
@@ -230,6 +256,21 @@ def step_impl(context):
     assert res['data']['project']['name'] == updated_variables['name']
 
 
+@then(u'the seer of the project is "{email}"')
+@when(u'the seer of the project is "{email}"')
+def step_impl(context, email):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_SINGLE_PROJECT,
+            'variables': json.dumps({'dbId': int(1)}),
+        },
+    )
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    assert res['data']['project']['seer']['email'] == email
+
+
 @then('get project with name "{name}" and description "{description}"')
 def step_impl(context, name, description):
     assert context.response.status_code == 200
@@ -257,3 +298,18 @@ def step_impl(context, title):
     context.last_project_id = json.loads(context.response.data.decode())['data'][
         'mutateProject'
     ]['dbId']
+
+
+@when(u'the stage of the project is "{stage}"')
+@then(u'the stage of the project is "{stage}"')
+def step_impl(context, stage):
+    context.response = context.client.post(
+        '/graphql',
+        json={
+            'query': QUERY_SINGLE_PROJECT,
+            'variables': json.dumps({'dbId': int(1)}),
+        },
+    )
+    assert context.response.status_code == 200
+    res = json.loads(context.response.data.decode())
+    assert res['data']['project']['currentState'] == str(stage)
