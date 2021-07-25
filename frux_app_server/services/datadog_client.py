@@ -12,12 +12,19 @@ statsd.start()
 ENVIRON = f"frux-app-server:{os.environ.get('ENVIRONMENT', 'test')}"
 
 
+def update_users():
+    statsd.gauge(
+        'frux-app-server.total-users', db.session.query(User).count(), tags=[ENVIRON],
+    )
+
+
 def new_login(provider):
     statsd.increment(f'frux-app-server.new-login.{provider}', tags=[ENVIRON])
 
 
 def new_user(provider):
     statsd.increment(f'frux-app-server.new-user.{provider}', tags=[ENVIRON])
+    update_users()
 
 
 def update_blocked_users():
@@ -72,3 +79,4 @@ def start(new_app):
         refresh_categories()
         refresh_states()
         update_blocked_users()
+        update_users()
