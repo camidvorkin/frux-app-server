@@ -24,15 +24,19 @@ from frux_app_server.models import db
 
 
 class User(SQLAlchemyObjectType):
-    db_id = graphene.Int(source='id')
 
-    is_seeder = graphene.Boolean()
-    is_sponsor = graphene.Boolean()
-    favorite_count = graphene.Int()
-    wallet_private_key = graphene.String()
+    db_id = graphene.Int(source='id', description='User\'s identification')
+
+    is_seeder = graphene.Boolean(
+        description='Determines whether the user is a seeder or not'
+    )
+    is_sponsor = graphene.Boolean(
+        description='Determines whether the user is a sponsor or not'
+    )
+    favorite_count = graphene.Int(description='Amount of favourites the user has')
 
     class Meta:
-        description = 'Registered users'
+        description = 'Registered users in Frux'
         model = UserModel
         interfaces = (graphene.relay.Node,)
         connection_field_factory = FruxFilterableConnectionField.factory
@@ -67,25 +71,35 @@ class UserConnections(graphene.Connection):
 
 
 class ProjectStage(SQLAlchemyObjectType):
-    db_id = graphene.Int(source='id')
+    db_id = graphene.Int(source='id', description='Project Stage\'s identification')
 
     class Meta:
-        description = 'Registered projects progress stages'
+        description = 'Registered projects stages for each project created in Frux'
         model = ProjectStageModel
         interfaces = (graphene.relay.Node,)
 
 
 class Project(SQLAlchemyObjectType):
-    db_id = graphene.Int(source='id')
-    amount_collected = graphene.Float()
-    investor_count = graphene.Int()
-    favorite_count = graphene.Int()
-    general_score = graphene.Float()
-    review_count = graphene.Int()
-    signed_url = graphene.String()
+    db_id = graphene.Int(source='id', description='Project\'s identification')
+    amount_collected = graphene.Float(
+        description='Total amount of money collected so far'
+    )
+    investor_count = graphene.Int(description='Total amount of investors so far')
+    favorite_count = graphene.Int(
+        description='Total amount of favourites the project recieved so far'
+    )
+    general_score = graphene.Float(
+        description='Average score obtained so far from the reviews'
+    )
+    review_count = graphene.Int(
+        description='Total amount of reviews the project recieved so far'
+    )
+    signed_url = graphene.String(
+        description='Returns a V4-signed URL to download the project image'
+    )
 
     class Meta:
-        description = 'Registered projects'
+        description = 'Registered projects in Frux'
         model = ProjectModel
         interfaces = (graphene.relay.Node,)
 
@@ -150,30 +164,30 @@ class Admin(SQLAlchemyObjectType):
 
 class Investments(SQLAlchemyObjectType):
     class Meta:
-        description = 'Information of a project backed by a user'
+        description = 'Detailed information of each investments made by a user to a project from Frux'
         model = InvestmentsModel
         interfaces = (graphene.relay.Node,)
 
 
 class Favorites(SQLAlchemyObjectType):
     class Meta:
-        description = 'Favorites from user to project'
+        description = 'Favorites given by a user to a project'
         model = FavoritesModel
         interfaces = (graphene.relay.Node,)
 
 
 class Category(SQLAlchemyObjectType):
     class Meta:
-        description = 'Information of the category for projects in the system'
+        description = 'Information of the category for every project in the system'
         model = CategoryModel
         interfaces = (graphene.relay.Node,)
 
 
 class Wallet(SQLAlchemyObjectType):
-    balance = graphene.Float()
+    balance = graphene.Float(description='Amount of money left in the wallet')
 
     class Meta:
-        description = 'A wallet given to a user'
+        description = 'Wallet given to a user'
         model = WalletModel
         interfaces = (graphene.relay.Node,)
 

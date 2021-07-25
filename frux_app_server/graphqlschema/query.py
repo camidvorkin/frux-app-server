@@ -12,16 +12,20 @@ from .object import (
     ProjectStage,
     Stats,
     User,
-    UserConnections,
     UserModel,
 )
 from .utils import requires_auth
 
 
-class Query(graphene.ObjectType):
+class Query(graphene.ObjectType,):
+    class Meta:
+        description = 'Read operations on the database such as getters of specific user or listing all projects or filtering by a criteria'
+
     node = graphene.relay.Node.Field()
 
-    profile = graphene.Field(User)
+    profile = graphene.Field(
+        User, description='Get the profile information about the user'
+    )
 
     @requires_auth
     def resolve_profile(self, info):
@@ -37,14 +41,26 @@ class Query(graphene.ObjectType):
     def resolve_project(self, info, db_id):  # pylint: disable=unused-argument
         return ProjectModel.query.get(db_id)
 
-    stats = graphene.Field(Stats)
+    stats = graphene.Field(
+        Stats,
+        description='Statistics generated about users, projects, invesments, favourites, etc.',
+    )
 
     def resolve_stats(self, _info):
         return []
 
-    all_users = FruxFilterableConnectionField(UserConnections)
-    all_projects = FruxFilterableConnectionField(ProjectConnections)
-    all_hashtags = SQLAlchemyConnectionField(Hashtag)
-    all_project_stages = SQLAlchemyConnectionField(ProjectStage)
-    all_admin = SQLAlchemyConnectionField(Admin)
-    all_categories = SQLAlchemyConnectionField(Category)
+    all_projects = FruxFilterableConnectionField(
+        ProjectConnections, description='All the projects are listed'
+    )
+    all_hashtags = SQLAlchemyConnectionField(
+        Hashtag, description='All used hashtags are listed'
+    )
+    all_project_stages = SQLAlchemyConnectionField(
+        ProjectStage, description='All project stages are listed'
+    )
+    all_admin = SQLAlchemyConnectionField(
+        Admin, description='All registered admins are listed'
+    )
+    all_categories = SQLAlchemyConnectionField(
+        Category, description='All categories of the system are listed'
+    )
