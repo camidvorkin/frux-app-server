@@ -275,7 +275,7 @@ class CompleteStageMutation(graphene.Mutation):
             if stage.stage_index > stage_index:
                 break
             stage.funds_released = True
-
+            stage.fund_released_at = datetime.datetime.utcnow()
         if id_stage == max_stage:
             project.current_state = State.COMPLETE
 
