@@ -1,9 +1,11 @@
+import datetime
 import functools
 import json
 import os
 
 import graphene
 import requests
+from firebase_admin import storage
 from graphene_sqlalchemy import SQLAlchemyObjectType
 from graphql import GraphQLError
 from promise import Promise
@@ -74,6 +76,7 @@ class Project(SQLAlchemyObjectType):
     favorite_count = graphene.Int()
     general_score = graphene.Float()
     review_count = graphene.Int()
+    signed_url = graphene.String()
 
     class Meta:
         description = 'Registered projects'
@@ -102,6 +105,15 @@ class Project(SQLAlchemyObjectType):
 
     def resolve_review_count(self, info):  # pylint: disable=unused-argument
         return len(self.reviews)
+
+    def resolve_signed_url(self, _info):
+        key = self.uri_image
+        if not key:
+            key = 'nopicture.jpg'
+        bucket = storage.bucket('frux-mobile.appspot.com')
+        blob = bucket.blob(key)
+        url = blob.generate_signed_url(expiration=datetime.timedelta(minutes=30))
+        return url
 
 
 class ProjectConnections(graphene.Connection):
