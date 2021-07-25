@@ -5,7 +5,7 @@ from pathlib import Path
 
 import firebase_admin
 from dotenv import load_dotenv
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask_cors import CORS
 from flask_graphql import GraphQLView
 from flask_migrate import Migrate
@@ -42,6 +42,10 @@ def create_app(test_db=None):
     new_app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     new_app.config["ERROR_404_HELP"] = False
 
+    @new_app.route("/")
+    def home():
+        return redirect(url_for("graphql"))
+
     db.init_app(new_app)
     api.init_app(new_app)
 
@@ -53,6 +57,7 @@ def create_app(test_db=None):
             graphiql=True,  # for having the GraphiQL interface
             graphiql_version="1.0.5",
             graphiql_template=GRAPHIQL_TEMPLATE,
+            graphiql_html_title="frux-app-server",
         ),
     )
 
