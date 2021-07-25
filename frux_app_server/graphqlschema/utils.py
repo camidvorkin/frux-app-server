@@ -135,3 +135,15 @@ def request_post(tags, body):
             'Unable to request project! Payments service is down!'
         ) from e
     return r
+
+
+def request_get(tags):
+    try:
+        r = requests.get(
+            f"{os.environ.get('FRUX_SC_URL', 'http://localhost:3000')}{tags}",
+        )
+    except requests.ConnectionError:
+        return GraphQLError('Unable to request wallet! Payments service is down!')
+    if r.status_code != 200:
+        return GraphQLError(f'Unable to request wallet! {r.status_code} - {r.text}')
+    return json.loads(r.content.decode())
