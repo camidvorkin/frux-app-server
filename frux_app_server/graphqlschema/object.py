@@ -36,6 +36,8 @@ class User(SQLAlchemyObjectType):
     )
     favorite_count = graphene.Int(description='Amount of favourites the user has')
 
+    wallet_private_key = graphene.String(description='Private key of the wallet')
+
     class Meta:
         description = 'Registered users in Frux'
         model = UserModel

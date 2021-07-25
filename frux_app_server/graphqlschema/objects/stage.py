@@ -38,7 +38,7 @@ class ProjectStageMutation(graphene.Mutation):
             project_id=id_project,
             description=description,
             goal=goal,
-            creation_date=datetime.datetime.utcnow(),
+            creation_date=datetime.datetime.today(),
         )
         project.stages.append(stage)
         project.goal += stage.goal

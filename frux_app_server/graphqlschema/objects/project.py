@@ -109,7 +109,7 @@ class ProjectMutation(graphene.Mutation):
             latitude=latitude,
             longitude=longitude,
             deadline=deadline,
-            creation_date=datetime.datetime.utcnow(),
+            creation_date=datetime.datetime.today(),
             current_state=State.CREATED,
             uri_image=uri_image,
             has_seer=False,
@@ -238,7 +238,6 @@ class CompleteStageMutation(graphene.Mutation):
     def mutate(
         self, info, id_project, id_stage=None
     ):  # pylint: disable=unused-argument
-
         if is_project_invalid(id_project):
             return Promise.reject(GraphQLError('Not project found!'))
         project = get_project(id_project)
@@ -267,7 +266,8 @@ class CompleteStageMutation(graphene.Mutation):
             if stage.stage_index > stage_index:
                 break
             stage.funds_released = True
-            stage.fund_released_at = datetime.datetime.utcnow()
+            stage.funds_released_at = datetime.datetime.today()
+
         if id_stage == max_stage:
             project.current_state = State.COMPLETE
 
