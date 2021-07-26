@@ -13,7 +13,11 @@ from .objects.project import (
     UpdateProject,
 )
 from .objects.review import ReviewProjectMutation
-from .objects.stage import ProjectStageMutation
+from .objects.stage import (
+    ProjectStageMutation,
+    RemoveProjectStageMutation,
+    UpdateProjectStageMutation,
+)
 from .objects.user import (
     BlockUserMutation,
     RemoveSeerMutation,
@@ -86,3 +90,5 @@ class Mutation(graphene.ObjectType):
     mutate_cancel_project = CancelProjectMutation.Field(
         description='Cancel the project'
     )
+    mutate_update_project_stage = UpdateProjectStageMutation.Field()
+    mutate_remove_project_stage = RemoveProjectStageMutation.Field()
