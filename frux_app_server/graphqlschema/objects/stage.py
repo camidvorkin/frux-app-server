@@ -22,7 +22,7 @@ def validate_project(user, project_id):
         raise GraphQLError('User is not the project owner!')
 
     if project.current_state != State.CREATED:
-        raise GraphQLError('User can\'t modify the stages pass the CREATION state')
+        raise GraphQLError('User can\'t modify the stages past the CREATION state')
 
 
 class ProjectStageMutation(graphene.Mutation):
