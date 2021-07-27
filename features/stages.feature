@@ -79,6 +79,7 @@ Feature: stages
     When user "johndoe@gmail.com" updates the title to "Buy potato"
     And the project is listed
     Then the title of the stage 1 is "Buy potato"
+    And the project's goal is 150
 
  Scenario: a project stage is removed
     Given user with mail "johndoe@gmail.com" is authenticated
@@ -88,6 +89,7 @@ Feature: stages
     When user removes the 1 stage
     And the project is listed
     Then the title of the stage 1 is "My second potato salad"
+    And the project's goal is 100
 
  Scenario: a project stage cannot be updated if is not in CREATED stage
     Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
@@ -98,3 +100,13 @@ Feature: stages
     And the owner of the project "johndoe@gmail.com" enabled the project for funding
     When user "johndoe@gmail.com" updates the title to "Buy potato"
     Then operation is rejected with the message "User can't modify the stages past the CREATION state"
+
+   Scenario: a project stage is removed
+    Given user with mail "johndoe@gmail.com" is authenticated
+    And a new project was created by the user with title "Potato salad"
+    And a stage was created with title "My first potato salad" and goal 150
+    And a stage was created with title "My second potato salad" and goal 100
+    And a stage was created with title "My third potato salad" and goal 350
+    When user removes the 2 stage
+    And the project is listed
+    Then the project's goal is 500

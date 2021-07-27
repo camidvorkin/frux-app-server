@@ -23,6 +23,7 @@ def validate_project(user, project_id):
 
     if project.current_state != State.CREATED:
         raise GraphQLError('User can\'t modify the stages past the CREATION state')
+    return project
 
 
 class ProjectStageMutation(graphene.Mutation):
@@ -76,7 +77,7 @@ class UpdateProjectStageMutation(graphene.Mutation):
         self, info, id_project, id_stage, title=None, description=None, goal=None
     ):  # pylint: disable=unused-argument
 
-        validate_project(info.context.user, id_project)
+        project = validate_project(info.context.user, id_project)
 
         stage = ProjectStageModel.query.get(id_stage)
         if stage is None:
@@ -89,6 +90,7 @@ class UpdateProjectStageMutation(graphene.Mutation):
         if description is not None:
             stage.description = description
         if goal is not None:
+            project.goal += goal - stage.goal
             stage.goal = goal
 
         db.session.commit()
@@ -105,13 +107,14 @@ class RemoveProjectStageMutation(graphene.Mutation):
     @requires_auth
     def mutate(self, info, id_project, id_stage):  # pylint: disable=unused-argument
 
-        validate_project(info.context.user, id_project)
+        project = validate_project(info.context.user, id_project)
 
         stage = ProjectStageModel.query.get(id_stage)
         if stage is None:
             return Promise.reject(
                 GraphQLError(f'There is no stage {id_stage} for this project')
             )
+        project.goal -= stage.goal
         db.session.delete(stage)
         db.session.commit()
         return stage
