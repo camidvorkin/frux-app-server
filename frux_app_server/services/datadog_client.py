@@ -54,7 +54,9 @@ def set_project_in_category(category, n=None):
 def set_project_in_state(state, n=None):
     if n is None:
         n = db.session.query(Project).filter(Project.current_state == state).count()
-    statsd.gauge('frux-app-server.project.state', n, tags=[ENVIRON, f'state:{state}'])
+    statsd.gauge(
+        'frux-app-server.project.current_state', n, tags=[ENVIRON, f'state:{state}']
+    )
 
 
 def refresh_categories():

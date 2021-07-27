@@ -1,7 +1,7 @@
 import json
 
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
-from commons import authenticate_user
+from commons import authenticate_user, mock_chat_response
 
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
@@ -130,6 +130,7 @@ def step_impl(context, hashtags):
 
 @given('the total amount to be collected is {goal}')
 @when('the total amount to be collected is {goal}')
+@mock_chat_response
 def step_impl(context, goal):
     variables['goal'] = int(goal)
     context.response = context.client.post(
@@ -280,6 +281,7 @@ def step_impl(context, name, description):
 
 
 @given(u'a new project was created by the user with title "{title}"')
+@mock_chat_response
 def step_impl(context, title):
     mutation_vars = {
         'description': "descriptionTest",

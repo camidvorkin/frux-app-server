@@ -19,6 +19,7 @@ from frux_app_server.graphqlschema.validations import (
 from frux_app_server.models import Project as ProjectModel
 from frux_app_server.models import db
 from frux_app_server.services import datadog_client
+from frux_app_server.services.chat_client import chat_client
 from frux_app_server.services.smart_contract_client import smart_contract_client
 
 from .hashtag import add_hashtags, delete_hashtags
@@ -119,8 +120,10 @@ class ProjectMutation(graphene.Mutation):
         db.session.commit()
         add_hashtags(hashtags, project.id)
 
-        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_state(project.current_state.value)
         datadog_client.set_project_in_category(project.category_name)
+
+        chat_client.subscribe_project_creator(project.id, info.context.user.id)
 
         return project
 
@@ -185,7 +188,7 @@ class UpdateProject(graphene.Mutation):
 
         db.session.commit()
 
-        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_state(project.current_state.value)
         datadog_client.set_project_in_category(project.category_name)
 
         return project
@@ -270,9 +273,11 @@ class CompleteStageMutation(graphene.Mutation):
             stage.fund_released_at = datetime.datetime.utcnow()
         if id_stage == max_stage:
             project.current_state = State.COMPLETE
+            chat_client.notify_change_state(project)
 
         db.session.commit()
-        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_state(project.current_state.value)
+        chat_client.notify_new_stage(project, stage, info.context.user)
         return project
 
 
@@ -331,7 +336,10 @@ class SeerProjectMutation(graphene.Mutation):
         project.current_state = State.FUNDING
         db.session.commit()
 
-        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_state(project.current_state.value)
+        chat_client.subscribe_project_seer(project.id, info.context.user.id)
+        chat_client.notify_new_seer(project, info.context.user)
+        chat_client.notify_change_state(project)
 
         return project
 

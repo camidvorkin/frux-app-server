@@ -11,6 +11,7 @@ from frux_app_server.graphqlschema.utils import requires_auth
 from frux_app_server.models import Investments as InvestmentsModel
 from frux_app_server.models import db
 from frux_app_server.services import datadog_client
+from frux_app_server.services.chat_client import chat_client
 from frux_app_server.services.smart_contract_client import smart_contract_client
 
 from .project import get_project, is_project_invalid
@@ -58,6 +59,7 @@ class InvestProject(graphene.Mutation):
         # If the new investment is more than the rest to collect
         if project.goal - project_collected <= invested_amount:
             project.current_state = State.IN_PROGRESS
+            chat_client.notify_change_state(project)
             invested_amount = project.goal - project_collected
             first_stage = sorted(project.stages, key=lambda x: x.stage_index)[0]
             first_stage.funds_released = True
@@ -78,7 +80,9 @@ class InvestProject(graphene.Mutation):
             invest.date_of_investment = datetime.datetime.utcnow()
 
         db.session.commit()
-        datadog_client.set_project_in_state(project.current_state)
+        datadog_client.set_project_in_state(project.current_state.value)
+        chat_client.subscribe_project_seeder(project.id, info.context.user.id)
+        chat_client.notify_new_seeder(project, info.context.user)
         return invest
 
 
