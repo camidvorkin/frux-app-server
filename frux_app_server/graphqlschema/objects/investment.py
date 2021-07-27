@@ -71,13 +71,13 @@ class InvestProject(graphene.Mutation):
                 user_id=info.context.user.id,
                 project_id=id_project,
                 invested_amount=invested_amount,
-                date_of_investment=datetime.datetime.utcnow(),
+                date_of_investment=datetime.datetime.today(),
             )
             db.session.add(invest)
         else:
             invest = q.first()
             invest.invested_amount += invested_amount
-            invest.date_of_investment = datetime.datetime.utcnow()
+            invest.date_of_investment = datetime.datetime.today()
 
         db.session.commit()
         datadog_client.set_project_in_state(project.current_state.value)

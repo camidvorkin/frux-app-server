@@ -22,7 +22,7 @@ Feature: stages
     When the project is listed
     Then the project's goal is 600
 
-  Scenario: when a stage project is completed the fund are released
+  Scenario: when a project is created, the first stage is released
     Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
     And a new project was created by the user with title "Potato salad"
     And a stage was created with title "My first potato salad" and goal 150
@@ -30,8 +30,8 @@ Feature: stages
     And a stage was created with title "My third potato salad" and goal 350
     And user with mail "gracedoe@gmail.com" is authenticated and has a wallet
     And user with mail "gracedoe@gmail.com" has a seer role
-    And the owner of the project "johndoe@gmail.com" enabled the project for funding
-    When the seer "gracedoe@gmail.com" complete the stage 1
+    When the owner of the project "johndoe@gmail.com" enables the project for funding
+    And the project is listed
     Then stages are complete up to stage 1
 
   Scenario: when a more than one stages project are completed the funds are released
@@ -44,6 +44,7 @@ Feature: stages
     And user with mail "gracedoe@gmail.com" has a seer role
     And the owner of the project "johndoe@gmail.com" enabled the project for funding
     When the seer "gracedoe@gmail.com" complete the stage 2
+    And the project is listed
     Then stages are complete up to stage 2
 
   Scenario: when one stage that is already completed tries be set as completed again

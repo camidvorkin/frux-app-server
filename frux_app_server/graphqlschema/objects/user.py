@@ -63,7 +63,7 @@ class UserMutation(graphene.Mutation):
         if not interests:
             interests = []
 
-        date = datetime.datetime.utcnow()
+        date = datetime.datetime.today()
         user = UserModel(
             username=username,
             email=email,
@@ -143,7 +143,7 @@ class UpdateUser(graphene.Mutation):
                     category = get_category(c)
                 user.interests.append(category)
         if user.creation_date_time is None:
-            user.creation_date_time = datetime.datetime.utcnow()
+            user.creation_date_time = datetime.datetime.today()
         db.session.commit()
         return user
 

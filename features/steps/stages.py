@@ -7,10 +7,19 @@ from commons import mock_smart_contract_response
 # pylint:disable=undefined-variable,unused-argument,function-redefined
 
 
-QUERY_PROJECT_GOAL = '''
+QUERY_PROJECT = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
             goal
+            stages {
+                edges {
+                    node {
+                        id
+                        stageIndex
+                        fundsReleased
+                    }
+                }
+            }
         }
     }
 '''
@@ -63,7 +72,7 @@ def step_impl(context):
     variables = {'dbId': context.last_project_id}
     context.response = context.client.post(
         '/graphql',
-        json={'query': QUERY_PROJECT_GOAL, 'variables': json.dumps(variables)},
+        json={'query': QUERY_PROJECT, 'variables': json.dumps(variables)},
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
 
@@ -93,7 +102,7 @@ def step_impl(context, email, n):
 @then(u'stages are complete up to stage {n}')
 def step_impl(context, n):
     res = json.loads(context.response.data.decode())
-    stages = res['data']['mutateCompleteStage']['stages']['edges']
+    stages = res['data']['project']['stages']['edges']
     stages = sorted(
         [
             (stage['node']['stageIndex'], stage['node']['fundsReleased'])
