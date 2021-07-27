@@ -1,5 +1,6 @@
 import json
 import os
+import re
 
 import responses
 from behave import *  # pylint:disable=wildcard-import,unused-wildcard-import
@@ -51,3 +52,25 @@ def step_impl(context):
 def mock_smart_contract_response(path, content, status_code, verb=responses.POST):
     url = os.environ.get('FRUX_SC_URL', 'http://localhost:3000')
     responses.add(verb, url + path, body=json.dumps(content), status=status_code)
+
+
+def mock_chat_response(function):
+    @responses.activate
+    def wrapper(context, **kwargs):
+        url = os.environ.get('FRUX_CHAT_URL', 'http://localhost:5500')
+        responses.add(
+            responses.POST, re.compile(url + '/*'), body=json.dumps({}), status=200
+        )
+        return function(context, **kwargs)
+
+    return wrapper
+
+
+# For debugging purposes
+def allow_chat_response(function):
+    def wrapper(context, **kwargs):
+        url = os.environ.get('FRUX_CHAT_URL', 'http://localhost:5500')
+        responses.add_passthru(re.compile(url + '/*'))
+        return function(context, **kwargs)
+
+    return wrapper
