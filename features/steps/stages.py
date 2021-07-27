@@ -10,13 +10,15 @@ from commons import mock_smart_contract_response
 QUERY_PROJECT = '''
     query FindProject($dbId: Int!){
         project(dbId: $dbId) {
+            dbId
             goal
             stages {
                 edges {
                     node {
-                        id
+                        dbId
                         stageIndex
                         fundsReleased
+                        title
                     }
                 }
             }
@@ -49,6 +51,25 @@ MUTATION_COMPLETE_STAGE = '''
     }
 '''
 
+MUTATION_UPDATE_STAGE = '''
+    mutation UpdateProjectStage($idProject: Int!, $idStage: Int!, $title: String) {
+        mutateUpdateProjectStage(idProject: $idProject, idStage: $idStage, title: $title) {
+            dbId
+            title
+            projectId
+        }
+    }
+'''
+
+MUTATION_REMOVE_STAGE = '''
+    mutation RemoveProjectStage($idProject: Int!, $idStage: Int!) {
+        mutateRemoveProjectStage(idProject: $idProject, idStage: $idStage) {
+            dbId
+            title
+        }
+    }
+'''
+
 
 @given(u'a stage was created with title "{title}" and goal {n}')
 def step_impl(context, title, n):
@@ -63,7 +84,6 @@ def step_impl(context, title, n):
         json={'query': MUTATION_NEW_STAGE, 'variables': json.dumps(variables)},
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
-
     assert context.response.status_code == 200
 
 
@@ -75,7 +95,27 @@ def step_impl(context):
         json={'query': QUERY_PROJECT, 'variables': json.dumps(variables)},
         headers={'Authorization': f'Bearer {context.last_token}'},
     )
+    assert context.response.status_code == 200
 
+
+@when(u'user "{email}" updates the title to "{title}"')
+def step_impl(context, email, title):
+    variables = {'idStage': int(1), 'idProject': int(1), 'title': title}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_UPDATE_STAGE, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {email}'},
+    )
+
+
+@when(u'user removes the {n} stage')
+def step_impl(context, n):
+    variables = {'idStage': int(n), 'idProject': int(1)}
+    context.response = context.client.post(
+        '/graphql',
+        json={'query': MUTATION_REMOVE_STAGE, 'variables': json.dumps(variables)},
+        headers={'Authorization': f'Bearer {context.last_token}'},
+    )
     assert context.response.status_code == 200
 
 
@@ -120,3 +160,12 @@ def step_impl(context, n):
 def step_impl(context, n):
     res = json.loads(context.response.data.decode())
     assert res['data']['project']['goal'] == float(n)
+
+
+@then(u'the title of the stage {n} is "{title}"')
+def step_impl(context, n, title):
+    res = json.loads(context.response.data.decode())
+    assert (
+        res['data']['project']['stages']['edges'][(int(n) - 1)]['node']['title']
+        == title
+    )
