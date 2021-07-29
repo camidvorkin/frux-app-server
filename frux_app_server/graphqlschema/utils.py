@@ -75,7 +75,6 @@ def requires_auth(function):
         if not info.context.user.wallet_address:
             request_user_wallet(info.context.user)
             db.session.commit()
-
         return function(obj, info, **kwargs)
 
     return wrapper

@@ -334,7 +334,11 @@ class SeerProjectMutation(graphene.Mutation):
         project.seer = seer
         project.has_seer = True
         project.goal = new_goal
-        project.current_state = State.FUNDING
+        if len(project.stages) == 1:
+            project.current_state = State.COMPLETE
+        else:
+            project.current_state = State.FUNDING
+
         db.session.commit()
 
         datadog_client.set_project_in_state(project.current_state.value)
