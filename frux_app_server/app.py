@@ -3,8 +3,11 @@ import logging
 import os
 from pathlib import Path
 
-import firebase_admin
 from dotenv import load_dotenv
+
+load_dotenv()
+
+import firebase_admin
 from flask import Flask, redirect, url_for
 from flask_cors import CORS
 from flask_graphql import GraphQLView
@@ -21,8 +24,6 @@ from .templates import GRAPHIQL_TEMPLATE
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-load_dotenv()
 
 
 def fix_dialect(s):

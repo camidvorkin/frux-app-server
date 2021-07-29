@@ -11,6 +11,7 @@ class SmartContractException(Exception):
 class SmartContractClient:
     def __init__(self):
         self.url = os.environ.get('FRUX_SC_URL', 'http://localhost:3000')
+        self.api_key = os.environ.get('FRUX_SC_API_KEY', '')
 
     def _request(
         self,
@@ -23,11 +24,15 @@ class SmartContractClient:
         if not body:
             body = {}
         try:
-            r = func(f'{self.url}{path}', json=body)
+            r = func(
+                f'{self.url}{path}', json=body, headers={'x-api-key': self.api_key}
+            )
         except requests.ConnectionError as e:
             raise SmartContractException(
                 f'Unable to {message}! Payments service is down!'
             ) from e
+        if r.status_code == 401:
+            raise SmartContractException(f'Unable to {message}! Invalid API key!')
         if expected_code and r.status_code != expected_code:
             return SmartContractException(
                 f'Unable to {message}! {r.status_code} - {r.text}'
@@ -57,14 +62,15 @@ class SmartContractClient:
         Requests a new user wallet, returns a dictionary with the address and internal ID
         '''
         try:
-            r = requests.post(f"{self.url}/wallet")
-        except requests.ConnectionError:
-            return
-
-        if r.status_code != 200:
-            return
-
-        return json.loads(r.content.decode())
+            return self._request(
+                '/wallet',
+                expected_code=200,
+                message='request wallet',
+                func=requests.post,
+            )
+        except SmartContractException:
+            # TODO: Log this
+            return {}
 
     def get_wallet_balance(self, wallet_id):
         '''

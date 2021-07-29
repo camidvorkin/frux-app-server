@@ -25,6 +25,7 @@ class ChatException(Exception):
 class ChatClient:
     def __init__(self):
         self.url = os.environ.get('FRUX_CHAT_URL', 'http://localhost:5500')
+        self.api_key = os.environ.get('FRUX_CHAT_API_KEY', '')
 
     def _request(
         self,
@@ -37,7 +38,9 @@ class ChatClient:
         if not body:
             body = {}
         try:
-            r = func(f'{self.url}{path}', json=body)
+            r = func(
+                f'{self.url}{path}', json=body, headers={'x-api-key': self.api_key}
+            )
         except requests.ConnectionError:
             # TODO: log this
             return
@@ -46,6 +49,9 @@ class ChatClient:
             # ) from e
         if expected_code and r.status_code != expected_code:
             return ChatException(f'Unable to {message}! {r.status_code} - {r.text}')
+        if r.status_code == 401:
+            # TODO: log unauthorized
+            pass
 
         res = {}
         res['_status_code'] = r.status_code

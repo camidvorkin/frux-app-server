@@ -10,7 +10,7 @@ Frux app server, for the asignature 'Taller de Programación II, FIUBA'
 
 Frux is the newest crowdfunding app in town.
 
-Before reading this repo, you should probably visit our [homepage](https://www.notion.so/fdelmazo/frux-efab2dee3dd74d52b2a57311a1891bd4), with lots of info on the development, latest news, and lots (*lots*) of documentation. 
+Before reading this repo, you should probably visit our [homepage](https://www.notion.so/fdelmazo/frux-efab2dee3dd74d52b2a57311a1891bd4), with lots of info on the development, latest news, and lots (*lots*) of documentation.
 
 If you are only interested in the source code, check out the different repos!
 
