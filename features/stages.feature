@@ -110,3 +110,22 @@ Feature: stages
     When user removes the 2 stage
     And the project is listed
     Then the project's goal is 500
+
+ Scenario: a project stage with one stage is complete
+    Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
+    And a new project was created by the user with title "Potato salad"
+    And a stage was created with title "My first potato salad" and goal 150
+    And user with mail "gracedoe@gmail.com" is authenticated and has a wallet
+    And user with mail "gracedoe@gmail.com" has a seer role
+    And the owner of the project "johndoe@gmail.com" enabled the project for funding
+    Then the project state is "COMPLETE"
+
+   Scenario: a project stage with two stage is in progress
+    Given user with mail "johndoe@gmail.com" is authenticated and has a wallet
+    And a new project was created by the user with title "Potato salad"
+    And a stage was created with title "My first potato salad" and goal 150
+    And a stage was created with title "My second potato salad" and goal 250
+    And user with mail "gracedoe@gmail.com" is authenticated and has a wallet
+    And user with mail "gracedoe@gmail.com" has a seer role
+    And the owner of the project "johndoe@gmail.com" enabled the project for funding
+    Then the project state is "FUNDING"
