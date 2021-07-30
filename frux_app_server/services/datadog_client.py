@@ -7,7 +7,6 @@ from frux_app_server.graphqlschema.constants import states
 from frux_app_server.models import Category, Project, User, db
 
 statsd = ThreadStats()
-statsd.start()
 
 ENVIRON = f"frux-app-server:{os.environ.get('ENVIRONMENT', 'test')}"
 
@@ -73,6 +72,7 @@ def refresh_states():
 def start(new_app):
     options = {'statsd_host': '127.0.0.1', 'statsd_port': 8125}
     initialize(**options)
+    statsd.start()
 
     if os.environ.get('ENVIRONMENT', 'test') == 'test':
         return

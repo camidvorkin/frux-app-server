@@ -20,6 +20,7 @@ from frux_app_server.models import db
 
 from .schema import schema
 from .services import datadog_client
+from .services.logger import LoggingMiddleware
 from .templates import GRAPHIQL_TEMPLATE
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ def create_app(test_db=None):
             graphiql_version="1.0.5",
             graphiql_template=GRAPHIQL_TEMPLATE,
             graphiql_html_title="frux-app-server",
+            middleware=[LoggingMiddleware()],
         ),
     )
 

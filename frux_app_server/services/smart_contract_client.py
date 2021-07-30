@@ -3,6 +3,8 @@ import os
 
 import requests
 
+from frux_app_server.services.logger import logger
+
 
 class SmartContractException(Exception):
     pass
@@ -28,12 +30,15 @@ class SmartContractClient:
                 f'{self.url}{path}', json=body, headers={'x-api-key': self.api_key}
             )
         except requests.ConnectionError as e:
+            logger.error('Unable to %s! Payments service is down!', message)
             raise SmartContractException(
                 f'Unable to {message}! Payments service is down!'
             ) from e
         if r.status_code == 401:
+            logger.error('Unable to %s! Invalid API key!', message)
             raise SmartContractException(f'Unable to {message}! Invalid API key!')
         if expected_code and r.status_code != expected_code:
+            logger.error('Unable to %s! %s - %s', message, str(r.status_code), r.text)
             return SmartContractException(
                 f'Unable to {message}! {r.status_code} - {r.text}'
             )
@@ -69,7 +74,6 @@ class SmartContractClient:
                 func=requests.post,
             )
         except SmartContractException:
-            # TODO: Log this
             return {}
 
     def get_wallet_balance(self, wallet_id):

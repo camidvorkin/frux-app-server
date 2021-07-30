@@ -2,6 +2,8 @@ import os
 
 import requests
 
+from frux_app_server.services.logger import logger
+
 
 class ChatException(Exception):
     pass
@@ -42,16 +44,13 @@ class ChatClient:
                 f'{self.url}{path}', json=body, headers={'x-api-key': self.api_key}
             )
         except requests.ConnectionError:
-            # TODO: log this
+            logger.warning('Unable to %s! Notification service is down!', message)
             return
-            # raise ChatException(
-            #    f'Unable to {message}! Notification service is down!'
-            # ) from e
         if expected_code and r.status_code != expected_code:
+            logger.warning('Unable to %s! %s - %s', message, str(r.status_code), r.text)
             return ChatException(f'Unable to {message}! {r.status_code} - {r.text}')
         if r.status_code == 401:
-            # TODO: log unauthorized
-            pass
+            logger.warning('Unable to %s! Invalid API key!', message)
 
         res = {}
         res['_status_code'] = r.status_code
