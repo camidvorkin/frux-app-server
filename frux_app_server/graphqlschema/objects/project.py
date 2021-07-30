@@ -277,7 +277,7 @@ class CompleteStageMutation(graphene.Mutation):
 
         db.session.commit()
         datadog_client.set_project_in_state(project.current_state.value)
-        chat_client.notify_new_stage(project, stage, info.context.user)
+        chat_client.notify_new_stage(project, stage_index, info.context.user)
         return project
 
 

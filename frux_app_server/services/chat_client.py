@@ -97,25 +97,25 @@ class ChatClient:
         body = {'project': project.name, 'username': user.email.split('@')[0]}
         self._notification_request(project.id, 'NewSeederNotification', body)
 
-    def _notify_new_stage_non_creator(self, project, stage, user):
+    def _notify_new_stage_non_creator(self, project, stage_index, user):
         body = {
             'project': project.name,
-            'stage_number': stage.stage_index,
+            'stage_number': stage_index,
             'username': user.email.split('@')[0],
         }
         self._notification_request(project.id, 'NewStageNotification_noncreator', body)
 
-    def _notify_new_stage_creator(self, project, stage, user):
+    def _notify_new_stage_creator(self, project, stage_index, user):
         body = {
             'project': project.name,
-            'stage_number': stage.stage_index,
+            'stage_number': stage_index,
             'username': user.email.split('@')[0],
         }
         self._notification_request(project.id, 'NewStageNotification_creator', body)
 
-    def notify_new_stage(self, project, stage, user):
-        self._notify_new_stage_non_creator(project, stage, user)
-        self._notify_new_stage_creator(project, stage, user)
+    def notify_new_stage(self, project, stage_index, user):
+        self._notify_new_stage_non_creator(project, stage_index, user)
+        self._notify_new_stage_creator(project, stage_index, user)
 
     def _notify_new_seer_creator(self, project, user):
         body = {'project': project.name, 'username': user.email.split('@')[0]}
