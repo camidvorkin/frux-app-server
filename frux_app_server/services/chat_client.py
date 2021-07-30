@@ -46,11 +46,13 @@ class ChatClient:
         except requests.ConnectionError:
             logger.warning('Unable to %s! Notification service is down!', message)
             return
-        if expected_code and r.status_code != expected_code:
-            logger.warning('Unable to %s! %s - %s', message, str(r.status_code), r.text)
-            return ChatException(f'Unable to {message}! {r.status_code} - {r.text}')
         if r.status_code == 401:
             logger.warning('Unable to %s! Invalid API key!', message)
+        if r.status_code == 503:
+            logger.warning('Unable to %s! Notification service is down!', message)
+        if expected_code and r.status_code != expected_code:
+            logger.warning('Unable to %s! %s - %s', message, str(r.status_code), r.text)
+            raise ChatException(f'Unable to {message}! {r.status_code} - {r.text}')
 
         res = {}
         res['_status_code'] = r.status_code

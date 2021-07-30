@@ -2,11 +2,12 @@ import json
 import os
 
 import requests
+from graphql import GraphQLError
 
 from frux_app_server.services.logger import logger
 
 
-class SmartContractException(Exception):
+class SmartContractException(GraphQLError):
     pass
 
 
@@ -34,12 +35,18 @@ class SmartContractClient:
             raise SmartContractException(
                 f'Unable to {message}! Payments service is down!'
             ) from e
+
         if r.status_code == 401:
             logger.error('Unable to %s! Invalid API key!', message)
             raise SmartContractException(f'Unable to {message}! Invalid API key!')
+        if r.status_code == 503:
+            logger.error('Unable to %s! Payments service is down!', message)
+            raise SmartContractException(
+                f'Unable to {message}! Payments service is down!'
+            )
         if expected_code and r.status_code != expected_code:
             logger.error('Unable to %s! %s - %s', message, str(r.status_code), r.text)
-            return SmartContractException(
+            raise SmartContractException(
                 f'Unable to {message}! {r.status_code} - {r.text}'
             )
 
@@ -66,15 +73,9 @@ class SmartContractClient:
         '''
         Requests a new user wallet, returns a dictionary with the address and internal ID
         '''
-        try:
-            return self._request(
-                '/wallet',
-                expected_code=200,
-                message='request wallet',
-                func=requests.post,
-            )
-        except SmartContractException:
-            return {}
+        return self._request(
+            '/wallet', expected_code=200, message='request wallet', func=requests.post,
+        )
 
     def get_wallet_balance(self, wallet_id):
         '''

@@ -1,8 +1,6 @@
 import datetime
 import logging
-from traceback import format_exception
 
-from graphql.execution.utils import ExecutionContext
 from pythonjsonlogger import jsonlogger
 
 logger = logging.getLogger()
@@ -42,17 +40,3 @@ class LoggingMiddleware(object):
             logger.info(info.path[0])
             logger.debug(info.context.data)  # full request
         return nextn(root, info, **args).catch(self.on_error(info))
-
-
-def new_report_error(self, error, traceback=None):
-    if not (hasattr(error, "original_error")):
-        exception = format_exception(
-            type(error), error, getattr(error, "stack", None) or traceback
-        )
-        logger.error("".join(exception))
-
-    self.errors.append(error)
-
-
-# Monkey patch report_error method from ExecutionContext class
-ExecutionContext.report_error = new_report_error

@@ -13,12 +13,16 @@ from frux_app_server.models import User as UserModel
 from frux_app_server.models import Wallet as WalletModel
 from frux_app_server.models import db
 from frux_app_server.services import datadog_client
-from frux_app_server.services.smart_contract_client import smart_contract_client
+from frux_app_server.services.smart_contract_client import (
+    SmartContractException,
+    smart_contract_client,
+)
 
 
 def request_user_wallet(user):
-    response_json = smart_contract_client.create_user_wallet()
-    if not response_json:
+    try:
+        response_json = smart_contract_client.create_user_wallet()
+    except SmartContractException:
         return
 
     wallet = WalletModel(
